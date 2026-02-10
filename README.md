@@ -112,7 +112,32 @@ Here's what AI adds:
 
 **Everything works without AI.** You get keyword search with relevance scoring, static daily summaries with motivational quotes, and manual project assignment. No features are locked behind an API key.
 
-## Quick Start
+## Getting Started
+
+### What you need
+
+- **Node.js 18+** — [Download from nodejs.org](https://nodejs.org) (click the big green button, run the installer)
+- **Git** — [Download from git-scm.com](https://git-scm.com) (optional — see "Download ZIP" below)
+
+Already have both? Skip to [Quick Start](#quick-start).
+
+<details>
+<summary><strong>New to the terminal?</strong> Click here for a quick primer.</summary>
+
+A terminal is a text-based app where you type commands. You'll only need it for the initial setup — after that, everything happens in your browser.
+
+**How to open it:**
+- **Mac** — Press `Cmd + Space`, type "Terminal", hit Enter
+- **Windows** — Press the Windows key, type "Command Prompt" or "PowerShell", hit Enter
+- **Linux** — Press `Ctrl + Alt + T`
+
+You'll see a blinking cursor. That's where you paste the commands below.
+
+**Don't want to use Git?** Click the green **"Code"** button at the top of this GitHub page, then **"Download ZIP"**. Unzip the folder, then open your terminal, type `cd ` (with a space after it), drag the unzipped folder into the terminal window, and press Enter. Then continue from step 3 below.
+
+</details>
+
+### Quick Start
 
 ```bash
 git clone https://github.com/sidarora28/todo-md.git
@@ -120,31 +145,21 @@ cd todo-md
 npm run setup
 ```
 
-The setup wizard walks you through everything: checking Node.js, installing dependencies, picking an AI provider (optional), creating your first projects, and adding your first tasks.
+The setup wizard handles everything: installing dependencies, picking an AI provider (optional), creating your first projects, and adding tasks. It takes about 5 minutes.
 
-Or if you want to skip the wizard:
+### For experienced developers
+
+If you'd rather skip the wizard:
 
 ```bash
 npm install && npm start
 ```
 
-Then open **http://localhost:3000**.
+Then open **http://localhost:3000**. AI config goes in `.env` — see [.env.example](.env.example) for options. Provider is auto-detected from key prefix (`sk-` → OpenAI, `sk-ant-` → Anthropic, `sk-or-v1-` → OpenRouter), or set `LLM_PROVIDER` explicitly.
 
-## Configuration
+---
 
-AI is configured through a `.env` file. Copy the example and add your key:
-
-```bash
-cp .env.example .env
-```
-
-You can either set `LLM_PROVIDER` and `LLM_API_KEY` explicitly, or just set `LLM_API_KEY` -- the provider is auto-detected from the key prefix (`sk-` for OpenAI, `sk-ant-` for Anthropic, `sk-or-v1-` for OpenRouter).
-
-See [.env.example](.env.example) for all options.
-
-## How It's Built
-
-For the curious (and contributors):
+## For Developers
 
 - **Server** -- Single Node.js file (`server.js`, Express), no build step, no framework, no database
 - **Frontend** -- Vanilla JS with ES modules, Monaco editor (the same editor engine as VS Code)

@@ -48,7 +48,7 @@ async function setup() {
 
   log('This setup wizard will:', 'cyan');
   log('  • Check your system requirements', 'yellow');
-  log('  • Install dependencies (express, cors, dotenv)', 'yellow');
+  log('  • Install the packages ToDo.md needs to run', 'yellow');
   log('  • Optionally connect an AI provider', 'yellow');
   log('  • Help you create your first projects', 'yellow');
   log('  • Capture your first tasks', 'yellow');
@@ -122,6 +122,8 @@ async function setup() {
       log('✓ All dependencies installed successfully!', 'green');
     } catch (e) {
       log('❌ Failed to install dependencies', 'red');
+      log('   This usually means Node.js is not installed correctly.', 'yellow');
+      log('   Try downloading it again from https://nodejs.org and re-running this setup.', 'yellow');
       process.exit(1);
     }
   } else {
@@ -400,7 +402,7 @@ Running notes and updates.
           const taskName = await question('  What needs to be done? (or press Enter to finish): ');
           if (!taskName.trim()) break;
 
-          const dueDate = await question('  When is it due? (YYYY-MM-DD or press Enter for no due date): ');
+          const dueDate = await question('  When is it due? (e.g. 2026-02-15, or press Enter for no due date): ');
 
           let projectKey = '';
           if (projects.length > 1) {
@@ -500,7 +502,7 @@ ${task.name}
 
   log('Next steps:', 'bright');
   console.log();
-  log('1. Start the server:', 'cyan');
+  log('1. Start the server (in this same terminal window):', 'cyan');
   log('   npm start', 'white');
   console.log();
   log('2. Open your browser to:', 'cyan');
@@ -521,7 +523,7 @@ ${task.name}
   if (startNow.toLowerCase() === 'y') {
     console.log();
     log('Starting server...', 'blue');
-    log('Press Ctrl+C to stop', 'yellow');
+    log('To stop the server later, click this window and press Ctrl+C (or just close it).', 'yellow');
     console.log();
 
     // Try to open browser
