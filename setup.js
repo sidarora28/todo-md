@@ -132,48 +132,95 @@ async function setup() {
     log('Configuration file already exists', 'yellow');
     log('✓ Skipping this step', 'green');
   } else {
-    log('Adding an LLM API key unlocks AI-powered features:', 'yellow');
+    log('ToDo.md can optionally use AI to make your life easier.', 'yellow');
+    log('This is 100% optional — everything works great without it.', 'yellow');
     console.log();
-    log('With a key, you get:', 'cyan');
-    log('  • Smart daily briefings — personalized coaching each morning', 'white');
-    log('  • Natural language search — "what are my overdue tasks?"', 'white');
-    log('  • Auto project inference — tasks route to the right project', 'white');
+    log('What AI adds:', 'cyan');
+    log('  • Smart daily briefings — a personalized summary each morning', 'white');
+    log('  • Natural language search — ask "what\'s overdue?" in plain English', 'white');
+    log('  • Auto project sorting — new tasks get filed automatically', 'white');
     console.log();
-    log('Without a key, everything still works:', 'cyan');
-    log('  • Keyword-based search with relevance scoring', 'white');
-    log('  • Motivational daily summary with static quotes', 'white');
-    log('  • Manual project assignment (task | date | project-name)', 'white');
-    console.log();
-    log('Supported providers: OpenAI, Anthropic, OpenRouter', 'yellow');
+    log('What you get without AI (still great!):', 'cyan');
+    log('  • Keyword search with relevance scoring', 'white');
+    log('  • Daily summary with motivational quotes', 'white');
+    log('  • Manual project assignment (you pick where tasks go)', 'white');
     console.log();
 
-    const setupAPI = await question('Enable AI features? (y/n): ');
+    const setupAPI = await question('Would you like to enable AI features? (y/n): ');
 
     if (setupAPI.toLowerCase() === 'y') {
       console.log();
-      log('Which LLM provider would you like to use?', 'cyan');
+      log('First, a quick explainer:', 'cyan');
       console.log();
-      log('  1. OpenAI     — GPT-4o (https://platform.openai.com/api-keys)', 'white');
-      log('  2. Anthropic  — Claude Sonnet (https://console.anthropic.com/)', 'white');
-      log('  3. OpenRouter — Any model (https://openrouter.ai/keys)', 'white');
+      log('An "API key" is like a password that lets ToDo.md talk to an', 'yellow');
+      log('AI service on your behalf. You get one from the AI provider\'s', 'yellow');
+      log('website (free tiers available). It looks like a long string of', 'yellow');
+      log('random characters — you just copy and paste it.', 'yellow');
+      console.log();
+      log('Pick an AI provider:', 'bright');
+      console.log();
+      log('  1. OpenAI        — Powers ChatGPT. Most popular choice.', 'white');
+      log('                     Default model: GPT-4o', 'yellow');
+      console.log();
+      log('  2. Anthropic     — Powers Claude. Great for reasoning.', 'white');
+      log('                     Default model: Claude Sonnet', 'yellow');
+      console.log();
+      log('  3. OpenRouter    — A single key that works with ANY model', 'white');
+      log('                     (OpenAI, Anthropic, Google, etc).', 'white');
+      log('                     Best if you\'re not sure. Free $1 credit.', 'yellow');
       console.log();
 
-      const providerChoice = await question('Choose provider (1/2/3): ');
+      const providerChoice = await question('Which provider? Type 1, 2, or 3 (default: 3): ');
 
       const providers = {
-        '1': { name: 'openai', label: 'OpenAI', prefix: 'sk-', model: 'gpt-4o', url: 'https://platform.openai.com/api-keys' },
-        '2': { name: 'anthropic', label: 'Anthropic', prefix: 'sk-ant-', model: 'claude-sonnet-4-5-20250929', url: 'https://console.anthropic.com/' },
-        '3': { name: 'openrouter', label: 'OpenRouter', prefix: 'sk-or-v1-', model: 'anthropic/claude-sonnet-4-5', url: 'https://openrouter.ai/keys' }
+        '1': {
+          name: 'openai', label: 'OpenAI', prefix: 'sk-', model: 'gpt-4o',
+          url: 'https://platform.openai.com/api-keys',
+          steps: [
+            'Go to: https://platform.openai.com/api-keys',
+            'Sign up or log in (Google/Microsoft sign-in works)',
+            'Click "+ Create new secret key"',
+            'Give it a name like "todo-md" and click "Create"',
+            'Copy the key (starts with sk-...)'
+          ]
+        },
+        '2': {
+          name: 'anthropic', label: 'Anthropic', prefix: 'sk-ant-', model: 'claude-sonnet-4-5-20250929',
+          url: 'https://console.anthropic.com/',
+          steps: [
+            'Go to: https://console.anthropic.com/',
+            'Sign up or log in',
+            'Go to Settings > API Keys',
+            'Click "Create Key"',
+            'Copy the key (starts with sk-ant-...)'
+          ]
+        },
+        '3': {
+          name: 'openrouter', label: 'OpenRouter', prefix: 'sk-or-v1-', model: 'anthropic/claude-sonnet-4-5',
+          url: 'https://openrouter.ai/keys',
+          steps: [
+            'Go to: https://openrouter.ai/keys',
+            'Sign up (Google sign-in works, free $1 credit included)',
+            'Click "Create Key"',
+            'Copy the key (starts with sk-or-v1-...)'
+          ]
+        }
       };
 
       const provider = providers[providerChoice.trim()] || providers['3'];
 
       console.log();
-      log(`Great! Get your ${provider.label} API key from:`, 'cyan');
-      log(`  ${provider.url}`, 'white');
+      log(`Great choice! Here\'s how to get your ${provider.label} API key:`, 'cyan');
+      console.log();
+      provider.steps.forEach((step, i) => {
+        log(`  ${i + 1}. ${step}`, 'white');
+      });
+      console.log();
+      log('Tip: Open the link above in your browser, get the key,', 'yellow');
+      log('     then come back here and paste it.', 'yellow');
       console.log();
 
-      const apiKey = await question('Paste your API key (or press Enter to skip for now): ');
+      const apiKey = await question('Paste your API key here (or press Enter to skip for now): ');
 
       if (apiKey.trim()) {
         const envContent = [
@@ -184,14 +231,17 @@ async function setup() {
           ''
         ].join('\n');
         fs.writeFileSync('.env', envContent);
+        console.log();
         log(`✓ ${provider.label} API key saved! AI features are now enabled.`, 'green');
       } else {
         fs.writeFileSync('.env', '# LLM_PROVIDER=openai|anthropic|openrouter\n# LLM_API_KEY=your-key-here\n# LLM_MODEL=optional-model-override\n');
-        log('✓ Created config file. You can add the key later in .env', 'green');
+        console.log();
+        log('✓ No worries! You can add it later anytime.', 'green');
+        log('  Just open the .env file in this folder and paste your key.', 'yellow');
       }
     } else {
       fs.writeFileSync('.env', '# LLM_PROVIDER=openai|anthropic|openrouter\n# LLM_API_KEY=your-key-here\n# LLM_MODEL=optional-model-override\n');
-      log('✓ No problem! Manual project assignment works great too.', 'green');
+      log('✓ No problem! You can always add AI later by editing the .env file.', 'green');
     }
   }
   console.log();
@@ -429,7 +479,7 @@ ${task.name}
   log('  ✓ Web-based IDE with Monaco editor', 'green');
   log('  ✓ Your projects and tasks created', 'green');
   log('  ✓ Quick capture files (inbox.md, tasks.md)', 'green');
-  if (fs.existsSync('.env') && fs.readFileSync('.env', 'utf8').includes('sk-or-v1-')) {
+  if (fs.existsSync('.env') && fs.readFileSync('.env', 'utf8').includes('LLM_API_KEY=') && !fs.readFileSync('.env', 'utf8').includes('# LLM_API_KEY=')) {
     log('  ✓ AI features enabled (search, daily briefings, project inference)', 'green');
   } else {
     log('  → Add an API key to .env later to unlock AI features', 'yellow');
