@@ -326,7 +326,7 @@ async function setup() {
         }
 
         // Create PROJECT.md
-        const projectMd = `<!-- This file tracks overall progress for this project. Update milestones and progress as you complete tasks. Monthly task files are in the tasks/ subfolder. -->
+        const projectMd = `<!-- Project settings: status can be "active", "paused", or "complete". target-date can be a date like 2026-06-01 or "ongoing". -->
 
 ---
 type: project
@@ -361,7 +361,9 @@ Running notes and updates.
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const monthName = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
-        const tasksMd = `# ${project.name} - ${monthName}
+        const tasksMd = `<!-- Task fields: priority (high/medium/low), status (todo/in-progress/done). Change status to "done" to mark a task complete. -->
+
+# ${project.name} - ${monthName}
 
 ## Active Tasks
 
