@@ -1,4 +1,9 @@
 class DashboardWidget {
+  esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
   constructor(containerEl, onTaskClick) {
     this.containerEl = containerEl;
     this.onTaskClick = onTaskClick;
@@ -86,11 +91,11 @@ class DashboardWidget {
       const badge = this.getUrgencyBadge(t, today);
       return `
         <div class="task-item ${urgencyClass}"
-             data-project="${t.project}"
-             data-task-title="${t.title}"
+             data-project="${this.esc(t.project)}"
+             data-task-title="${this.esc(t.title)}"
              title="Click to open in editor">
           <div class="task-content">
-            <span class="task-title">${t.title}</span>
+            <span class="task-title">${this.esc(t.title)}</span>
             ${badge ? `<span class="task-badge">${badge}</span>` : ''}
           </div>
           <button class="reschedule-btn" title="Reschedule task">📅</button>
@@ -205,8 +210,8 @@ class DashboardWidget {
             </button>
           </div>
         </div>
-        <div class="ai-briefing-narrative">${s.narrative}</div>
-        ${s.quote ? `<div class="ai-briefing-quote">"${s.quote}"</div>` : ''}
+        <div class="ai-briefing-narrative">${this.esc(s.narrative)}</div>
+        ${s.quote ? `<div class="ai-briefing-quote">"${this.esc(s.quote)}"</div>` : ''}
       </div>
     `;
 

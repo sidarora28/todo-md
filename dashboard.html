@@ -313,24 +313,29 @@ function nextMilestone(proj) {
   return m ? m.text : 'All complete ✓';
 }
 
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function taskRow(task, projectKey, projectName, showOverdue = false) {
   const accent = PROJECT_ACCENTS[projectKey] || '#8b5cf6';
   const pc = PRIORITY_COLORS[task.priority] || '#6b7280';
   const id = 'task-' + Math.random().toString(36).substr(2, 9);
   const checked = task.status === 'done';
-  const tagHtml = task.tags ? task.tags.map(t => `<span class="mono">#${t}</span>`).join('') : '';
+  const tagHtml = task.tags ? task.tags.map(t => `<span class="mono">#${esc(t)}</span>`).join('') : '';
   const overdueBadge = showOverdue && task.daysLate ? badge(`${task.daysLate}d overdue`, '#ef4444') : '';
 
   const taskData = encodeURIComponent(JSON.stringify({ title: task.title, projectKey }));
 
   return `
     <div class="task-row ${checked ? 'checked' : ''}" id="${id}" data-task='${taskData}'>
-      <input type="checkbox" ${checked ? 'checked' : ''} ${checked ? 'disabled' : ''} onchange="handleTaskToggle(this, '${task.title}', '${projectKey}')">
+      <input type="checkbox" ${checked ? 'checked' : ''} ${checked ? 'disabled' : ''} onchange="handleTaskToggle(this, ${esc(JSON.stringify(task.title))}, ${esc(JSON.stringify(projectKey))})">
       <div style="flex:1;min-width:0">
         <div class="task-meta">
-          <span class="task-title">${task.title}</span>
-          ${badge(projectName, accent)}
-          ${badge(task.priority, pc)}
+          <span class="task-title">${esc(task.title)}</span>
+          ${badge(esc(projectName), accent)}
+          ${badge(esc(task.priority), pc)}
           ${overdueBadge}
         </div>
         ${tagHtml ? `<div class="task-tags">${tagHtml}</div>` : ''}

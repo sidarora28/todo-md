@@ -7,9 +7,13 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({ origin: `http://localhost:${PORT}` }));
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static(__dirname, {
+  dotfiles: 'deny',
+  index: false,
+  extensions: ['html', 'css', 'js', 'png', 'jpg', 'gif', 'svg', 'ico', 'woff', 'woff2', 'ttf']
+}));
 
 // Redirect root to IDE
 app.get('/', (req, res) => {
@@ -944,13 +948,7 @@ app.get('/api/ai/test', async (req, res) => {
   if (!config) {
     return res.json({
       status: 'no_api_key',
-      debug: {
-        __dirname: __dirname,
-        cwd: process.cwd(),
-        envPath: envPath,
-        envFileExists: envExists,
-        envContentsPreview: envExists ? fs.readFileSync(envPath, 'utf8').substring(0, 100) : 'FILE NOT FOUND'
-      },
+      envFileExists: envExists,
       message: 'No LLM API key configured. Set LLM_API_KEY or OPENROUTER_API_KEY in .env'
     });
   }
@@ -977,7 +975,7 @@ app.post('/api/ai/search', async (req, res) => {
     }
 
     const allFiles = collectAllMarkdownFiles();
-    const hasLLM = !!process.env.OPENROUTER_API_KEY;
+    const hasLLM = !!getLLMConfig();
     let answer = '';
     let results = [];
 
@@ -1588,11 +1586,12 @@ ${title}
 // Security helper function
 function isPathSafe(requestedPath) {
   const resolved = path.resolve(__dirname, requestedPath);
-  const blacklist = ['node_modules', '.git', '.env', 'server.js', 'package.json', 'package-lock.json'];
+  const blacklist = ['node_modules', '.git', '.env', 'server.js', 'setup.js', 'package.json', 'package-lock.json'];
+  const segments = requestedPath.split(path.sep);
 
-  return resolved.startsWith(__dirname) &&
+  return (resolved === __dirname || resolved.startsWith(__dirname + path.sep)) &&
          !requestedPath.includes('..') &&
-         !blacklist.some(pattern => requestedPath.includes(pattern));
+         !blacklist.some(blocked => segments.includes(blocked));
 }
 
 // Helper function to build recursive file tree
@@ -1839,7 +1838,7 @@ function archiveOldInboxEntries(content) {
 // Process tasks.md: parse tasks, infer projects, sync to monthly files
 async function processTasks(content) {
   const lines = content.split('\n');
-  const taskPattern = /^- \[ \] (.+?) \| (\d{4}-\d{2}-\d{2})(?: \| (.+))?$/;
+  const taskPattern = /^- \[ \] (.+?)(?:\s*\|\s*(\d{4}-\d{2}-\d{2}))?(?:\s*\|\s*(.+))?$/;
   const tasks = [];
   const taskLineIndices = [];
 
@@ -1905,8 +1904,8 @@ async function processTasks(content) {
       // Get project name for display
       const projectName = task.project;
 
-      // Determine monthly file path
-      const dueDate = new Date(task.dueDate);
+      // Determine monthly file path (use due date month, or current month if no due date)
+      const dueDate = task.dueDate ? new Date(task.dueDate) : new Date();
       const year = dueDate.getFullYear();
       const month = String(dueDate.getMonth() + 1).padStart(2, '0');
       const monthlyFilePath = path.join(__dirname, 'projects', projectName, 'tasks', `${year}-${month}.md`);
@@ -1933,7 +1932,7 @@ async function processTasks(content) {
         const today = new Date().toISOString().split('T')[0];
         const taskBlock = `---
 ### ${task.title}
-due: ${task.dueDate}
+due: ${task.dueDate || ''}
 priority: medium
 status: todo
 tags: []
