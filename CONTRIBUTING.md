@@ -35,7 +35,7 @@ Open http://localhost:3000 to see the IDE.
 
 ## Project Structure
 
-See [CLAUDE.md](CLAUDE.md) for a detailed architecture guide.
+See [.claude/instructions.md](.claude/instructions.md) for a detailed architecture guide.
 
 ```
 server.js       → Express server, all API endpoints

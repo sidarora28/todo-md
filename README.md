@@ -151,7 +151,7 @@ For the curious (and contributors):
 - **Data** -- Plain `.md` files on disk. That's it.
 - **API** -- REST endpoints for file CRUD, task syncing, dashboard data, and AI search
 
-Full details: [API Reference](docs/API.md) | [Contributor Guide](CLAUDE.md)
+Full details: [API Reference](docs/API.md) | [Contributor Guide](.claude/instructions.md)
 
 ## Contributing
 

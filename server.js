@@ -2138,7 +2138,7 @@ app.post('/api/files/delete', (req, res) => {
     }
 
     // Protected files
-    const PROTECTED_FILES = ['CLAUDE.md', 'README.md', 'server.js', 'package.json'];
+    const PROTECTED_FILES = ['README.md', 'server.js', 'package.json'];
     if (PROTECTED_FILES.includes(path.basename(filePath))) {
       return res.status(403).json({ error: 'Cannot delete protected system file' });
     }
