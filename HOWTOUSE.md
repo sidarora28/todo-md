@@ -36,7 +36,7 @@ Projects (strategic)          Your Day (tactical)
 
 ## Table of Contents
 
-1. [Your First 5 Minutes](#your-first-5-minutes)
+1. [Walkthrough: A Real Day with ToDo.md](#walkthrough-a-real-day-with-todomd)
 2. [The Daily File](#the-daily-file)
 3. [Quick Capture (tasks.md)](#quick-capture-tasksmd)
 4. [Inbox (inbox.md)](#inbox-inboxmd)
@@ -49,23 +49,157 @@ Projects (strategic)          Your Day (tactical)
 
 ---
 
-## Your First 5 Minutes
+## Walkthrough: A Real Day with ToDo.md
 
-When you open the IDE (http://localhost:3000/ide.html), you'll see three panels:
+Let's walk through a complete use case from scratch — setting up projects, adding tasks, working through your day, and tracking progress. This is how ToDo.md is meant to be used.
 
-- **Left** -- File tree. This is your workspace. Click any file to open it.
-- **Center** -- Editor. This is where you read and edit files. It works like VS Code.
-- **Right** -- Dashboard. Shows task counts, project progress, and your daily briefing.
+### Step 1: Create your projects
 
-**Start here:**
+Projects represent the big things in your life — work goals, side projects, personal areas. Open the IDE and create a few project folders under `projects/`:
 
-1. Click on `tasks.md` in the file tree. This is your quick capture file.
-2. Add a task: `- [ ] Try out ToDo.md | 2026-02-15 | your-project-name`
-3. Press `Ctrl+S` (or `Cmd+S` on Mac) to save.
-4. Look in your project folder in the file tree -- the task should appear in the monthly file.
-5. Open the `daily/` folder and click today's file. If the task is due today, it's there.
+```
+projects/
+  newsletter/
+  app-redesign/
+  personal/
+```
 
-That's the core loop. Everything else builds on this.
+Each project needs a `PROJECT.md` and a `tasks/` folder. Here's what `newsletter/PROJECT.md` looks like:
+
+```markdown
+---
+type: project
+status: active
+target-date: ongoing
+---
+
+# Newsletter
+
+## Goal
+Grow subscriber base to 1,000 and publish weekly.
+
+## Milestones
+- [ ] Set up email platform
+- [ ] Reach 500 subscribers
+- [ ] Launch paid tier
+
+## Progress
+Tasks: 0/0 complete (0%)
+
+## Notes
+Running notes and updates go here.
+```
+
+This is your strategic view. You set it up once and come back to it when you need to zoom out and think about the bigger picture.
+
+### Step 2: Add tasks through quick capture
+
+Now open `tasks.md`. This is where the tactical work begins. Dump in everything you need to do:
+
+```markdown
+- [ ] Write February newsletter draft | 2026-02-10 | newsletter
+- [ ] Review subscriber analytics | 2026-02-12 | newsletter
+- [ ] Sketch wireframes for onboarding screens | 2026-02-10 | app-redesign
+- [ ] Audit current drop-off points in signup funnel | 2026-02-11 | app-redesign
+- [ ] Book dentist appointment | 2026-02-10 | personal
+- [ ] Buy groceries for the week | 2026-02-10 | personal
+```
+
+Press `Ctrl+S` to save. Watch what happens:
+
+- Each task gets filed into the right project's monthly task file.
+- The lines in `tasks.md` get a ~~strikethrough~~ to show they've been processed.
+- The tasks now exist in your project files with full metadata (priority, status, tags).
+
+You just went from a brain dump to an organized system in one save.
+
+### Step 3: Open your daily file
+
+Click on the `daily/` folder in the file tree and open today's date. The system has already scanned all your projects and built your day:
+
+```markdown
+# Monday, February 10, 2026
+
+## Today
+- [ ] Write February newsletter draft (newsletter)
+- [ ] Sketch wireframes for onboarding screens (app-redesign)
+- [ ] Book dentist appointment (personal)
+- [ ] Buy groceries for the week (personal)
+```
+
+This is your home base. Four tasks from three different projects, all in one place. You don't need to flip between project files — everything due today is right here.
+
+**You can also add new tasks directly to this file.** Write a new `- [ ] task name (project)` line, save, and it syncs back to the project. The daily file isn't just a read-only report — it's your working document.
+
+### Step 4: Complete tasks right from the daily file
+
+This is the fastest way to get things done. You don't need to open any project file — just check off tasks right here in today's file.
+
+You made the dentist call and bought groceries. Change `[ ]` to `[x]`:
+
+```markdown
+- [x] Book dentist appointment (personal)
+- [x] Buy groceries for the week (personal)
+```
+
+Save. That's it. Two things happen automatically:
+
+1. Those tasks are marked as `status: done` in the `personal` project's monthly file.
+2. The project's completion percentage updates.
+
+You checked off two tasks in one file, and two project files updated themselves. This is the core of ToDo.md — **you work in the daily file, the system handles the rest.**
+
+### Step 5: Check the dashboard
+
+Look at the dashboard panel on the right side of the IDE. You can see:
+
+- **Task counts** — 2 done today, 2 remaining, 2 more coming this week
+- **Project progress** — Newsletter at 0%, App Redesign at 0%, Personal at 50% for this month
+- **Daily briefing** — If you have AI enabled, you get a personalized narrative about your day. If not, you get a motivational quote.
+
+### Step 6: Manage tasks from the project files
+
+Sometimes you need to make changes at the project level — reschedule something, change priority, add context. Open `projects/newsletter/tasks/2026-02.md`:
+
+```markdown
+---
+### Write February newsletter draft
+due: 2026-02-10
+priority: high
+status: todo
+tags: [writing]
+created: 2026-02-10
+
+Write the February issue focusing on subscriber onboarding.
+
+**Notes:**
+
+---
+```
+
+Want to push it to tomorrow? Change `due: 2026-02-10` to `due: 2026-02-11`. Save. Tomorrow's daily file will pick it up. Want to bump it to high priority? Already done. Need to add notes? Write under `**Notes:**`. This is where you manage the details.
+
+### Step 7: Search across everything
+
+Open the search panel. If you have AI enabled, try:
+
+- `"what's overdue?"` — Finds all tasks past their due date across every project.
+- `"show me newsletter tasks"` — Pulls everything related to the newsletter.
+- `"summarize my week"` — Gets a narrative overview of what's due, what's done, and what needs attention.
+- `"what should I focus on today?"` — AI looks at priorities, deadlines, and your workload to suggest what matters most.
+
+Without AI, keyword search still works — type "newsletter" and you'll get every file that mentions it, ranked by relevance.
+
+### The pattern
+
+That's a full day with ToDo.md:
+
+1. **Morning** — Open the daily file. Everything due today is already there.
+2. **During the day** — Check off tasks as you go. Add new ones to `tasks.md` when they come up.
+3. **When needed** — Open project files to reschedule, reprioritize, or add context.
+4. **Zoom out** — Check the dashboard or use search to get the big picture.
+
+The daily file keeps you focused on what's in front of you. The project files keep the strategic view intact. The system keeps them in sync.
 
 ---
 
