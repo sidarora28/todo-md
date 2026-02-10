@@ -25,47 +25,56 @@ There's no sign-up, no subscription, no data leaving your machine. If you can op
 
 Optional AI features (search, daily briefings, auto-sorting) are available if you bring your own API key, but everything works great without them.
 
-## Core Workflow
+## Your Daily To-Do List (the main event)
 
-ToDo.md is built around three files that work together. You write in them, and the system keeps everything in sync.
+Every day, ToDo.md generates a single file that is your to-do list for the day. This is where you'll spend most of your time.
 
-### inbox.md -- Your scratchpad
-
-Dump anything here: thoughts, ideas, half-formed plans, links, notes. Don't worry about organizing it. Date headers are inserted automatically, and entries older than 30 days are auto-archived so the file stays clean.
-
-### tasks.md -- Quick task capture
-
-When something becomes actionable, add it here in a simple format:
-
-```
-- [ ] Write project proposal | 2026-02-15 | work-project
-- [ ] Buy groceries | 2026-02-11
-```
-
-When you save, tasks automatically sync to the right project folder. Don't know which project a task belongs to? Leave off the project name -- if you have AI enabled, it figures out the best match. Otherwise, it goes into an "others" project.
-
-Processed tasks get a strikethrough so you can see what's been filed. Once completed tasks pile up (50+), older ones are archived automatically.
-
-### daily/*.md -- Your "what to do today" view
-
-Each day, a focus file is generated with your tasks due today and anything overdue, pulled from all your projects. It looks like this:
+The system reads through **all your projects**, finds every task that's due today or overdue, and builds a focused daily file for you automatically. You don't curate this list — it's assembled from your entire workspace.
 
 ```markdown
 # Monday, February 10, 2026
 
 ## Overdue
 - [ ] Finish budget report (finance)
+- [ ] Reply to client email (freelance)
 
 ## Today
 - [ ] Send newsletter draft (newsletter)
 - [ ] Review pull request (open-source)
+- [ ] Call dentist (personal)
 ```
 
-Check items off here and they sync back as completed in your project files. Edit a project task file, and today's daily file updates to match.
+**This is your working file for the day.** Check items off here, and they sync back as completed in your project files automatically. Add a new task to a project file, and today's daily list updates to include it. Everything stays in sync — you never update things in two places.
+
+The daily file lives in `daily/` and a new one is generated each day.
+
+## How Tasks Get There
+
+Your daily file is auto-generated, but the tasks come from your projects. Here's how things flow in:
+
+### tasks.md -- Quick capture
+
+This is your inbox for actionable items. Jot down tasks in a simple format:
+
+```
+- [ ] Write project proposal | 2026-02-15 | work-project
+- [ ] Buy groceries | 2026-02-11
+- [ ] Research hosting options
+```
+
+When you save, tasks automatically route to the right project folder. No project specified? AI figures out the best match (or it defaults to "others"). Once filed, the task shows up in your daily list when its due date arrives.
+
+Processed tasks get a strikethrough so you can see what's been filed. Older completed tasks auto-archive after 50 pile up.
+
+### inbox.md -- Your scratchpad
+
+Not everything is a task yet. Dump thoughts, ideas, half-formed plans, links, and notes here. Don't worry about organizing it — date headers are inserted automatically, and entries older than 30 days are auto-archived so the file stays clean.
+
+When a thought becomes actionable, move it to `tasks.md`.
 
 ### How they connect
 
-**Inbox** is for raw thoughts. **tasks.md** is for actionable items. **Daily files** are your "what to focus on right now" view. Changes flow bidirectionally between daily files and project task files, so you never have to update things in two places.
+**Inbox** is for raw thoughts. **tasks.md** turns them into actionable items filed under projects. **Your daily file** pulls it all together — the system reads every project and builds your to-do list for today. Check things off in the daily file, and changes flow back to the project files automatically.
 
 ## Projects
 
