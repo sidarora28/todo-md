@@ -40,12 +40,19 @@ async function setup() {
   log('╚══════════════════════════════════════╝', 'bright');
   console.log();
 
+  log('Your ToDo.md folder is here:', 'cyan');
+  log(`  ${__dirname}`, 'bright');
+  log('All your tasks, projects, and notes will live in this folder', 'yellow');
+  log('as plain .md files you can open with any text editor.', 'yellow');
+  console.log();
+
   log('This setup wizard will:', 'cyan');
   log('  • Check your system requirements', 'yellow');
   log('  • Install dependencies (express, cors, dotenv)', 'yellow');
+  log('  • Optionally connect an AI provider', 'yellow');
   log('  • Help you create your first projects', 'yellow');
   log('  • Capture your first tasks', 'yellow');
-  log('  • Get you up and running in 5 minutes', 'yellow');
+  log('  • Get you up and running in about 5 minutes', 'yellow');
   console.log();
 
   const ready = await question('Ready to begin? Press Enter to continue...');
@@ -473,6 +480,10 @@ ${task.name}
   console.log();
 
   log('Your ToDo.md system is ready!', 'green');
+  console.log();
+
+  log('Your files are in:', 'cyan');
+  log(`  ${__dirname}`, 'bright');
   console.log();
 
   log('What you have:', 'cyan');
