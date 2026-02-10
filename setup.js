@@ -132,7 +132,7 @@ async function setup() {
     log('Configuration file already exists', 'yellow');
     log('✓ Skipping this step', 'green');
   } else {
-    log('Adding an OpenRouter API key unlocks AI-powered features:', 'yellow');
+    log('Adding an LLM API key unlocks AI-powered features:', 'yellow');
     console.log();
     log('With a key, you get:', 'cyan');
     log('  • Smart daily briefings — personalized coaching each morning', 'white');
@@ -144,35 +144,53 @@ async function setup() {
     log('  • Motivational daily summary with static quotes', 'white');
     log('  • Manual project assignment (task | date | project-name)', 'white');
     console.log();
-    log('Cost: ~$0.01 per 10 tasks using OpenRouter (Claude Opus 4.5)', 'yellow');
+    log('Supported providers: OpenAI, Anthropic, OpenRouter', 'yellow');
     console.log();
 
     const setupAPI = await question('Enable AI features? (y/n): ');
 
     if (setupAPI.toLowerCase() === 'y') {
       console.log();
-      log('Great! Here\'s how to get your API key:', 'cyan');
-      log('  1. Visit: https://openrouter.ai/keys', 'white');
-      log('  2. Sign up (free tier available with $1 credit)', 'white');
-      log('  3. Click "Create Key"', 'white');
-      log('  4. Copy the key (starts with sk-or-v1-...)', 'white');
+      log('Which LLM provider would you like to use?', 'cyan');
+      console.log();
+      log('  1. OpenAI     — GPT-4o (https://platform.openai.com/api-keys)', 'white');
+      log('  2. Anthropic  — Claude Sonnet (https://console.anthropic.com/)', 'white');
+      log('  3. OpenRouter — Any model (https://openrouter.ai/keys)', 'white');
+      console.log();
+
+      const providerChoice = await question('Choose provider (1/2/3): ');
+
+      const providers = {
+        '1': { name: 'openai', label: 'OpenAI', prefix: 'sk-', model: 'gpt-4o', url: 'https://platform.openai.com/api-keys' },
+        '2': { name: 'anthropic', label: 'Anthropic', prefix: 'sk-ant-', model: 'claude-sonnet-4-5-20250929', url: 'https://console.anthropic.com/' },
+        '3': { name: 'openrouter', label: 'OpenRouter', prefix: 'sk-or-v1-', model: 'anthropic/claude-sonnet-4-5', url: 'https://openrouter.ai/keys' }
+      };
+
+      const provider = providers[providerChoice.trim()] || providers['3'];
+
+      console.log();
+      log(`Great! Get your ${provider.label} API key from:`, 'cyan');
+      log(`  ${provider.url}`, 'white');
       console.log();
 
       const apiKey = await question('Paste your API key (or press Enter to skip for now): ');
 
-      if (apiKey.trim() && apiKey.startsWith('sk-or-v1-')) {
-        fs.writeFileSync('.env', `# OpenRouter API Key (for AI search, daily briefings, project inference)\nOPENROUTER_API_KEY=${apiKey.trim()}\n`);
-        log('✓ API key saved! AI features are now enabled.', 'green');
-      } else if (apiKey.trim()) {
-        log('⚠️  That doesn\'t look right. API keys start with sk-or-v1-', 'yellow');
-        fs.writeFileSync('.env', '# OPENROUTER_API_KEY=your-key-here\n');
-        log('✓ Created config file. You can add the key later in .env', 'green');
+      if (apiKey.trim()) {
+        const envContent = [
+          `# LLM Configuration (for AI search, daily briefings, project inference)`,
+          `LLM_PROVIDER=${provider.name}`,
+          `LLM_API_KEY=${apiKey.trim()}`,
+          `# LLM_MODEL=${provider.model}`,
+          ''
+        ].join('\n');
+        fs.writeFileSync('.env', envContent);
+        log(`✓ ${provider.label} API key saved! AI features are now enabled.`, 'green');
       } else {
-        fs.writeFileSync('.env', '# OPENROUTER_API_KEY=your-key-here\n');
+        fs.writeFileSync('.env', '# LLM_PROVIDER=openai|anthropic|openrouter\n# LLM_API_KEY=your-key-here\n# LLM_MODEL=optional-model-override\n');
         log('✓ Created config file. You can add the key later in .env', 'green');
       }
     } else {
-      fs.writeFileSync('.env', '# OPENROUTER_API_KEY=your-key-here\n');
+      fs.writeFileSync('.env', '# LLM_PROVIDER=openai|anthropic|openrouter\n# LLM_API_KEY=your-key-here\n# LLM_MODEL=optional-model-override\n');
       log('✓ No problem! Manual project assignment works great too.', 'green');
     }
   }

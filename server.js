@@ -38,37 +38,113 @@ function extractJSON(text) {
   return match ? match[0] : null;
 }
 
-// Shared LLM helper - calls OpenRouter API
+// Auto-detect LLM provider from API key prefix or explicit env vars
+// Returns { provider, apiKey, model, endpoint }
+function getLLMConfig() {
+  // Support explicit provider config
+  const explicitProvider = process.env.LLM_PROVIDER;
+  const explicitKey = process.env.LLM_API_KEY;
+  const explicitModel = process.env.LLM_MODEL;
+
+  // Legacy support
+  const legacyKey = process.env.OPENROUTER_API_KEY;
+  const legacyModel = process.env.OPENROUTER_MODEL;
+
+  const apiKey = explicitKey || legacyKey;
+  if (!apiKey) return null;
+
+  // Determine provider: explicit > auto-detect from key prefix
+  let provider = explicitProvider;
+  if (!provider) {
+    if (apiKey.startsWith('sk-ant-')) provider = 'anthropic';
+    else if (apiKey.startsWith('sk-or-v1-')) provider = 'openrouter';
+    else if (apiKey.startsWith('sk-')) provider = 'openai';
+    else provider = 'openrouter'; // default fallback
+  }
+
+  const configs = {
+    openai: {
+      provider: 'openai',
+      apiKey,
+      model: explicitModel || legacyModel || 'gpt-4o',
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+    },
+    anthropic: {
+      provider: 'anthropic',
+      apiKey,
+      model: explicitModel || legacyModel || 'claude-sonnet-4-5-20250929',
+      endpoint: 'https://api.anthropic.com/v1/messages'
+    },
+    openrouter: {
+      provider: 'openrouter',
+      apiKey,
+      model: explicitModel || legacyModel || 'anthropic/claude-sonnet-4-5',
+      endpoint: 'https://openrouter.ai/api/v1/chat/completions'
+    }
+  };
+
+  return configs[provider] || configs.openrouter;
+}
+
+// Shared LLM helper - calls OpenAI, Anthropic, or OpenRouter API
 // Returns { success: boolean, content: string|null, error: string|null }
 async function callLLM(prompt, options = {}) {
-  const { model = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4.5', maxTokens = 1024 } = options;
-
-  if (!process.env.OPENROUTER_API_KEY) {
+  const config = getLLMConfig();
+  if (!config) {
     return { success: false, content: null, error: 'no_api_key' };
   }
 
+  const { model = config.model, maxTokens = 1024 } = options;
+
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: maxTokens,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
+    let response;
+
+    if (config.provider === 'anthropic') {
+      response = await fetch(config.endpoint, {
+        method: 'POST',
+        headers: {
+          'x-api-key': config.apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+    } else {
+      // OpenAI and OpenRouter use the same format
+      response = await fetch(config.endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+    }
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('OpenRouter API error:', response.status, errorBody);
+      console.error(`${config.provider} API error:`, response.status, errorBody);
       return { success: false, content: null, error: `api_error_${response.status}` };
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+
+    // Anthropic uses a different response format
+    let content;
+    if (config.provider === 'anthropic') {
+      content = data.content?.[0]?.text;
+    } else {
+      content = data.choices?.[0]?.message?.content;
+    }
+
     return { success: true, content, error: null };
   } catch (error) {
     console.error('LLM call failed:', error.message);
@@ -863,13 +939,11 @@ function collectAllMarkdownFiles() {
 app.get('/api/ai/test', async (req, res) => {
   const envPath = path.join(__dirname, '.env');
   const envExists = fs.existsSync(envPath);
-  const model = process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-4.5';
-  const hasKey = !!process.env.OPENROUTER_API_KEY;
+  const config = getLLMConfig();
 
-  if (!hasKey) {
+  if (!config) {
     return res.json({
       status: 'no_api_key',
-      model,
       debug: {
         __dirname: __dirname,
         cwd: process.cwd(),
@@ -877,42 +951,20 @@ app.get('/api/ai/test', async (req, res) => {
         envFileExists: envExists,
         envContentsPreview: envExists ? fs.readFileSync(envPath, 'utf8').substring(0, 100) : 'FILE NOT FOUND'
       },
-      message: 'OPENROUTER_API_KEY not set in .env'
+      message: 'No LLM API key configured. Set LLM_API_KEY or OPENROUTER_API_KEY in .env'
     });
   }
 
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 30,
-        messages: [{ role: 'user', content: 'Say hello in exactly 5 words.' }]
-      })
-    });
+    const testResult = await callLLM('Say hello in exactly 5 words.', { maxTokens: 30 });
 
-    const statusCode = response.status;
-    const body = await response.text();
-    const contentType = response.headers.get('content-type') || 'unknown';
-
-    if (!response.ok) {
-      return res.json({ status: 'api_error', model, httpStatus: statusCode, contentType, rawBody: body.substring(0, 500) });
+    if (!testResult.success) {
+      return res.json({ status: testResult.error, provider: config.provider, model: config.model });
     }
 
-    // Check if response is actually JSON
-    if (!contentType.includes('json') && body.trimStart().startsWith('<')) {
-      return res.json({ status: 'html_response', model, httpStatus: statusCode, contentType, rawBody: body.substring(0, 500), message: 'Got HTML instead of JSON — likely a proxy or redirect issue' });
-    }
-
-    const data = JSON.parse(body);
-    const content = data.choices?.[0]?.message?.content || 'No content in response';
-    return res.json({ status: 'ok', model, response: content, message: 'LLM is working!' });
+    return res.json({ status: 'ok', provider: config.provider, model: config.model, response: testResult.content, message: 'LLM is working!' });
   } catch (error) {
-    return res.json({ status: 'network_error', model, error: error.message });
+    return res.json({ status: 'network_error', provider: config.provider, model: config.model, error: error.message });
   }
 });
 
