@@ -19,7 +19,7 @@
     "type": "git",
     "url": "https://github.com/sidarora28/todo-md.git"
   },
-  "author": "",
+  "author": "sidarora28",
   "license": "MIT",
   "dependencies": {
     "cors": "^2.8.5",

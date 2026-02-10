@@ -89,7 +89,7 @@ You can create projects through the setup wizard, the IDE, or the API.
 
 ## Dashboard
 
-Open `dashboard.html` for a bird's-eye view of everything. It shows:
+The IDE includes a built-in dashboard panel that gives you a bird's-eye view of everything:
 
 - **Project progress** -- See all your projects and their tasks at a glance
 - **Task counts** -- How many tasks are overdue, due today, and due this week

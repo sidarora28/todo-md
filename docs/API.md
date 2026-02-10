@@ -46,7 +46,7 @@ All file-system endpoints enforce path safety rules. A request is rejected with 
 - Contains `..` segments.
 - Touches any blacklisted name: `node_modules`, `.git`, `.env`, `server.js`, `package.json`, `package-lock.json`.
 
-Additionally, the following files are protected from deletion: `CLAUDE.md`, `README.md`, `server.js`, `package.json`, `dashboard.html`.
+Additionally, the following files are protected from deletion: `CLAUDE.md`, `README.md`, `server.js`, `package.json`.
 
 ---
 
@@ -689,7 +689,7 @@ Delete a file or directory.
 
 **Notes:**
 - Directories are deleted recursively.
-- Protected files (`CLAUDE.md`, `DECISIONS.md`, `README.md`, `server.js`, `package.json`, `dashboard.html`) cannot be deleted.
+- Protected files (`CLAUDE.md`, `DECISIONS.md`, `README.md`, `server.js`, `package.json`) cannot be deleted.
 
 ---
 

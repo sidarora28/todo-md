@@ -2138,7 +2138,7 @@ app.post('/api/files/delete', (req, res) => {
     }
 
     // Protected files
-    const PROTECTED_FILES = ['CLAUDE.md', 'README.md', 'server.js', 'package.json', 'dashboard.html'];
+    const PROTECTED_FILES = ['CLAUDE.md', 'README.md', 'server.js', 'package.json'];
     if (PROTECTED_FILES.includes(path.basename(filePath))) {
       return res.status(403).json({ error: 'Cannot delete protected system file' });
     }
@@ -2338,5 +2338,4 @@ created: ${date}
 
 app.listen(PORT, () => {
   console.log(`Task system server running at http://localhost:${PORT}`);
-  console.log(`Open http://localhost:${PORT}/dashboard.html in your browser`);
 });

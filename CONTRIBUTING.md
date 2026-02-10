@@ -41,7 +41,6 @@ See [CLAUDE.md](CLAUDE.md) for a detailed architecture guide.
 server.js       → Express server, all API endpoints
 ide.html        → Web IDE entry point
 ide/            → Frontend code (vanilla JS, ES modules)
-dashboard.html  → Standalone dashboard view
 docs/API.md     → API reference
 ```
 
