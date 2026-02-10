@@ -689,7 +689,7 @@ Delete a file or directory.
 
 **Notes:**
 - Directories are deleted recursively.
-- Protected files (`DECISIONS.md`, `README.md`, `server.js`, `package.json`) cannot be deleted.
+- Protected files (`README.md`, `server.js`, `package.json`) cannot be deleted.
 
 ---
 
