@@ -14,6 +14,7 @@ const rl = readline.createInterface({
 const colors = {
   reset: '\x1b[0m',
   bright: '\x1b[1m',
+  white: '\x1b[37m',
   green: '\x1b[32m',
   blue: '\x1b[34m',
   yellow: '\x1b[33m',
