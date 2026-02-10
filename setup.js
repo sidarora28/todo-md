@@ -519,6 +519,10 @@ ${task.name}
   log('   • inbox.md - Freeform scratchpad for random thoughts', 'yellow');
   log('   • tasks.md - Structured tasks that sync automatically', 'yellow');
   console.log();
+  log('5. Read the full guide:', 'cyan');
+  log('   Open HOWTOUSE.md in the IDE for a complete walkthrough,', 'yellow');
+  log('   syntax reference, and FAQ.', 'yellow');
+  console.log();
 
   const startNow = await question('Start the server now? (y/n): ');
 

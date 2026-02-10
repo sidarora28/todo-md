@@ -147,6 +147,8 @@ npm run setup
 
 The setup wizard handles everything: installing dependencies, picking an AI provider (optional), creating your first projects, and adding tasks. It takes about 5 minutes.
 
+New to ToDo.md? Read the **[complete guide](HOWTOUSE.md)** for a full walkthrough, syntax reference, and FAQ.
+
 ### For experienced developers
 
 If you'd rather skip the wizard:
