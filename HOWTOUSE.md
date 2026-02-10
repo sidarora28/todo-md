@@ -92,30 +92,11 @@ Running notes and updates go here.
 
 This is your strategic view. You set it up once and come back to it when you need to zoom out and think about the bigger picture.
 
-### Step 2: Add tasks through quick capture
+### Step 2: Add today's tasks in the daily file
 
-Now open `tasks.md`. This is where the tactical work begins. Dump in everything you need to do:
+Open the `daily/` folder in the file tree and click today's file. This is your working document — where you'll spend most of your time.
 
-```markdown
-- [ ] Write February newsletter draft | 2026-02-10 | newsletter
-- [ ] Review subscriber analytics | 2026-02-12 | newsletter
-- [ ] Sketch wireframes for onboarding screens | 2026-02-10 | app-redesign
-- [ ] Audit current drop-off points in signup funnel | 2026-02-11 | app-redesign
-- [ ] Book dentist appointment | 2026-02-10 | personal
-- [ ] Buy groceries for the week | 2026-02-10 | personal
-```
-
-Press `Ctrl+S` to save. Watch what happens:
-
-- Each task gets filed into the right project's monthly task file.
-- The lines in `tasks.md` get a ~~strikethrough~~ to show they've been processed.
-- The tasks now exist in your project files with full metadata (priority, status, tags).
-
-You just went from a brain dump to an organized system in one save.
-
-### Step 3: Open your daily file
-
-Click on the `daily/` folder in the file tree and open today's date. The system has already scanned all your projects and built your day:
+Add tasks for today directly here:
 
 ```markdown
 # Monday, February 10, 2026
@@ -127,9 +108,27 @@ Click on the `daily/` folder in the file tree and open today's date. The system 
 - [ ] Buy groceries for the week (personal)
 ```
 
-This is your home base. Four tasks from three different projects, all in one place. You don't need to flip between project files — everything due today is right here.
+Save. Each task syncs back to the right project's monthly file automatically. You're writing in one place, and the system organizes everything behind the scenes.
 
-**You can also add new tasks directly to this file.** Write a new `- [ ] task name (project)` line, save, and it syncs back to the project. The daily file isn't just a read-only report — it's your working document.
+**The daily file is for today.** If it's due today, it goes here.
+
+### Step 3: Schedule future tasks through tasks.md
+
+Got tasks that aren't for today? That's what `tasks.md` is for. Open it and add tasks with future due dates:
+
+```markdown
+- [ ] Review subscriber analytics | 2026-02-12 | newsletter
+- [ ] Audit current drop-off points in signup funnel | 2026-02-11 | app-redesign
+- [ ] Read chapter 3 of Design of Everyday Things | 2026-02-15 | personal
+```
+
+Press `Ctrl+S` to save. What happens:
+
+- Each task gets filed into the right project's monthly task file.
+- The lines in `tasks.md` get a ~~strikethrough~~ to show they've been processed.
+- When the due date arrives, the task automatically appears in that day's daily file.
+
+**Think of it this way:** The daily file is your "right now." `tasks.md` is your "later." Both feed into the same project system.
 
 ### Step 4: Complete tasks right from the daily file
 
