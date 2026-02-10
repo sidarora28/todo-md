@@ -37,15 +37,11 @@ Projects (strategic)          Your Day (tactical)
 ## Table of Contents
 
 1. [Walkthrough: A Real Day with ToDo.md](#walkthrough-a-real-day-with-todomd)
-2. [The Daily File](#the-daily-file)
-3. [Quick Capture (tasks.md)](#quick-capture-tasksmd)
-4. [Inbox (inbox.md)](#inbox-inboxmd)
-5. [Projects](#projects)
-6. [Task Format Reference](#task-format-reference)
-7. [AI Features](#ai-features)
-8. [Without AI](#without-ai)
-9. [Tips and Tricks](#tips-and-tricks)
-10. [FAQ](#faq)
+2. [Syntax Reference](#syntax-reference)
+3. [AI Features](#ai-features)
+4. [Without AI](#without-ai)
+5. [Tips and Tricks](#tips-and-tricks)
+6. [FAQ](#faq)
 
 ---
 
@@ -130,7 +126,33 @@ Press `Ctrl+S` to save. What happens:
 
 **Think of it this way:** The daily file is your "right now." `tasks.md` is your "later." Both feed into the same project system.
 
-### Step 4: Complete tasks right from the daily file
+### Step 4: Capture ideas in inbox.md
+
+Not everything is a task yet. Maybe you had a thought in a meeting, saw an interesting article, or want to explore an idea later. That's what `inbox.md` is for.
+
+Open it and just type. No special format needed:
+
+```markdown
+## 2026-02-10
+
+- Had an idea about a weekly review email for the newsletter
+- Check out that article Sarah shared about productivity systems
+- What if we added dark mode to the app?
+```
+
+Save. Date headers are added automatically, and entries older than 30 days are auto-archived so the file stays clean.
+
+**The full capture spectrum:**
+
+| What you have | Where it goes |
+|--------------|---------------|
+| A task for today | Daily file (`daily/`) |
+| A task for a future date | `tasks.md` |
+| An idea, thought, or note without a date | `inbox.md` |
+
+When a thought in the inbox becomes actionable, move it to `tasks.md` or add it to today's daily file.
+
+### Step 5: Complete tasks right from the daily file
 
 This is the fastest way to get things done. You don't need to open any project file — just check off tasks right here in today's file.
 
@@ -148,7 +170,7 @@ Save. That's it. Two things happen automatically:
 
 You checked off two tasks in one file, and two project files updated themselves. This is the core of ToDo.md — **you work in the daily file, the system handles the rest.**
 
-### Step 5: Check the dashboard
+### Step 6: Check the dashboard
 
 Look at the dashboard panel on the right side of the IDE. You can see:
 
@@ -156,7 +178,7 @@ Look at the dashboard panel on the right side of the IDE. You can see:
 - **Project progress** — Newsletter at 0%, App Redesign at 0%, Personal at 50% for this month
 - **Daily briefing** — If you have AI enabled, you get a personalized narrative about your day. If not, you get a motivational quote.
 
-### Step 6: Manage tasks from the project files
+### Step 7: Manage tasks from the project files
 
 Sometimes you need to make changes at the project level — reschedule something, change priority, add context. Open `projects/newsletter/tasks/2026-02.md`:
 
@@ -178,7 +200,7 @@ Write the February issue focusing on subscriber onboarding.
 
 Want to push it to tomorrow? Change `due: 2026-02-10` to `due: 2026-02-11`. Save. Tomorrow's daily file will pick it up. Want to bump it to high priority? Already done. Need to add notes? Write under `**Notes:**`. This is where you manage the details.
 
-### Step 7: Search across everything
+### Step 8: Search across everything
 
 Open the search panel. If you have AI enabled, try:
 
@@ -202,52 +224,9 @@ The daily file keeps you focused on what's in front of you. The project files ke
 
 ---
 
-## The Daily File
+## Syntax Reference
 
-**Location:** `daily/YYYY-MM-DD.md` (e.g., `daily/2026-02-10.md`)
-
-This is your working file for the day. You'll spend most of your time here.
-
-**How it works:**
-
-- Every time you open the IDE or the dashboard refreshes, the system scans all your projects for tasks that are due today or overdue.
-- It builds a single file organized by urgency: overdue first, then today's tasks.
-- Each task shows which project it belongs to so you have context.
-
-**What it looks like:**
-
-```markdown
-# Monday, February 10, 2026
-
-## Overdue
-- [ ] Send invoice to client (freelance)
-- [ ] Finish budget report (finance)
-
-## Today
-- [ ] Write newsletter draft (newsletter)
-- [ ] Review pull request (open-source)
-- [ ] Call dentist (personal)
-```
-
-**Checking off tasks:**
-
-Change `- [ ]` to `- [x]`:
-
-```markdown
-- [x] Call dentist (personal)
-```
-
-Save the file, and the task is automatically marked as done in the project's monthly file too. You never need to update things in two places.
-
----
-
-## Quick Capture (tasks.md)
-
-**Location:** `tasks.md` (root of your workspace)
-
-This is your inbox for actionable items. When you think of something that needs doing, dump it here.
-
-### Syntax
+### tasks.md format
 
 ```
 - [ ] Task name | due date | project
@@ -260,80 +239,7 @@ This is your inbox for actionable items. When you think of something that needs 
 | `\|` due date | Optional | `2026-02-15` (must be YYYY-MM-DD format) |
 | `\|` project | Optional | `newsletter` (must match a project folder name) |
 
-### Examples
-
-```markdown
-- [ ] Write project proposal | 2026-02-15 | work-project
-- [ ] Buy groceries | 2026-02-11
-- [ ] Research hosting options
-```
-
-### What happens when you save
-
-1. Each task is matched to a project (by the project name you specified, or by AI auto-detection if you have AI enabled, or filed under "others" if neither).
-2. The task is added to that project's monthly task file with full metadata (priority defaults to medium, status defaults to todo).
-3. The line in `tasks.md` gets a ~~strikethrough~~ so you can see it's been processed.
-4. Once 50+ completed tasks pile up, older ones are auto-archived to keep the file clean.
-
----
-
-## Inbox (inbox.md)
-
-**Location:** `inbox.md` (root of your workspace)
-
-Not everything is a task yet. The inbox is for raw thoughts, ideas, links, half-formed plans -- anything you want to capture without committing to action.
-
-### How to use it
-
-Just type. No special format needed.
-
-```markdown
-## 2026-02-10
-
-- Had an idea about a weekly review email for the newsletter
-- Check out that article Sarah shared about productivity systems
-- What if we added dark mode to the app?
-```
-
-### What happens automatically
-
-- **Date headers** are inserted when you save, so entries are organized by day.
-- **Auto-archiving** -- Entries older than 30 days are moved to an archive to keep the file manageable.
-
-### When to use inbox vs tasks.md
-
-| Use inbox.md when... | Use tasks.md when... |
-|----------------------|----------------------|
-| It's a thought or idea | It's something you need to do |
-| You're not sure if it's actionable | You know the action and roughly when |
-| You want to capture it quickly and think later | You want it to sync to a project |
-
----
-
-## Projects
-
-**Location:** `projects/your-project-name/`
-
-Each project is a folder containing:
-
-```
-projects/
-  newsletter/
-    PROJECT.md          ← Project overview (goals, milestones, progress)
-    tasks/
-      2026-02.md        ← Monthly task file (February 2026)
-      2026-03.md        ← Monthly task file (March 2026)
-  app-redesign/
-    PROJECT.md
-    tasks/
-      2026-02.md
-```
-
-### PROJECT.md
-
-This is the strategic view of your project. It has two parts:
-
-**1. Frontmatter (the settings between `---` lines):**
+### PROJECT.md frontmatter
 
 ```yaml
 ---
@@ -348,43 +254,9 @@ target-date: ongoing
 | `status` | `active`, `paused`, `complete` |
 | `target-date` | A date like `2026-06-01`, or `ongoing` for open-ended projects |
 
-**2. Body (free-form markdown):**
+### Task metadata (in monthly task files)
 
-```markdown
-# Newsletter
-
-## Goal
-Grow subscriber base to 1,000 and publish weekly.
-
-## Milestones
-- [x] Set up email platform
-- [ ] Reach 500 subscribers
-- [ ] Launch paid tier
-
-## Progress
-Tasks: 5/12 complete (42%)
-
-## Notes
-Running notes and updates go here.
-```
-
-### Creating a new project
-
-**In the IDE:** Click the `+` button in the file tree to create a new folder under `projects/`. Add a `PROJECT.md` and a `tasks/` subfolder.
-
-**Through the setup wizard:** Re-run `npm run setup` and it will skip already-completed steps, letting you add new projects.
-
-### Monthly task files
-
-These live in `projects/your-project/tasks/` and are named by month (e.g., `2026-02.md`). They're created automatically when tasks are synced from `tasks.md`.
-
----
-
-## Task Format Reference
-
-This is the complete reference for task metadata in monthly task files.
-
-### A task block looks like this:
+A task block looks like this:
 
 ```markdown
 ---
@@ -421,13 +293,12 @@ Change `status: todo` to `status: done`. On the next sync, the task moves from "
 ### Task lifecycle
 
 ```
-tasks.md (quick capture)
-    ↓ save
-project/tasks/2026-02.md (Active Tasks, status: todo)
-    ↓ change status to done
-project/tasks/2026-02.md (Completed Tasks, status: done)
-    ↓ also reflected in
-daily/2026-02-10.md (checked off)
+daily file (today's tasks)  ──┐
+                               ├──> project/tasks/2026-02.md (Active Tasks)
+tasks.md (future tasks)     ──┘          ↓ change status to done
+                                  project/tasks/2026-02.md (Completed Tasks)
+                                         ↓ also reflected in
+                                  daily file (checked off)
 ```
 
 ---
