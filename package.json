@@ -1,0 +1,29 @@
+{
+  "name": "todo-md",
+  "version": "1.0.0",
+  "description": "Markdown-first task management with a built-in web IDE",
+  "main": "server.js",
+  "scripts": {
+    "setup": "node setup.js",
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "task-management",
+    "productivity",
+    "markdown",
+    "todo",
+    "web-ide"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sidarora28/todo-md.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.4",
+    "express": "^4.18.2"
+  }
+}

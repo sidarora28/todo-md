@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task IDE</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css">
+  <link rel="stylesheet" href="ide/styles/ide.css">
+</head>
+<body>
+  <div class="ide-container">
+    <!-- File Tree (left) -->
+    <div class="file-tree-panel">
+      <div class="panel-header">
+        <span>Files</span>
+        <div class="panel-header-actions">
+          <button class="icon-btn" id="search-btn" title="Search (Cmd+Shift+F)">
+            <i class="codicon codicon-search"></i>
+          </button>
+          <button class="icon-btn" id="new-project-btn" title="New Project">
+            <i class="codicon codicon-add"></i>
+          </button>
+          <button class="icon-btn" id="theme-toggle" title="Toggle theme">
+            <i class="codicon codicon-color-mode"></i>
+          </button>
+        </div>
+      </div>
+      <div class="file-tree-content" id="file-tree"></div>
+    </div>
+
+    <!-- Resizer -->
+    <div class="resizer" id="resizer-left"></div>
+
+    <!-- Editor (center) -->
+    <div class="editor-panel">
+      <div class="editor-header">
+        <span id="current-file" class="current-file">No file open</span>
+        <span id="save-indicator" class="save-indicator">✓ Saved</span>
+      </div>
+      <div id="monaco-container"></div>
+    </div>
+
+    <!-- Resizer -->
+    <div class="resizer" id="resizer-right"></div>
+
+    <!-- Dashboard Widget (right) -->
+    <div class="dashboard-panel">
+      <div class="panel-header">
+        <span>Today's Focus</span>
+      </div>
+      <div class="dashboard-content" id="dashboard-widget"></div>
+    </div>
+  </div>
+
+  <!-- New Project Modal -->
+  <div id="new-project-modal" class="modal" style="display:none">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>New Project</h3>
+        <button class="modal-close" id="close-project-modal">
+          <i class="codicon codicon-close"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Project Key</label>
+          <input type="text" id="project-key" placeholder="e.g., my-project" class="form-input">
+          <div class="form-hint">Lowercase, use hyphens for spaces</div>
+        </div>
+        <div class="form-group">
+          <label>Project Name</label>
+          <input type="text" id="project-name" placeholder="e.g., My New Project" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>Goal (optional)</label>
+          <textarea id="project-goal" placeholder="What success looks like" class="form-input" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Target Date</label>
+          <select id="project-target" class="form-input">
+            <option value="ongoing">Ongoing</option>
+            <option value="date">Specific Date</option>
+          </select>
+          <input type="date" id="project-date" class="form-input" style="display:none; margin-top: 8px;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancel-project-btn">Cancel</button>
+        <button class="btn btn-primary" id="create-project-btn">Create Project</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Modal -->
+  <div id="search-modal" class="search-modal modal" style="display:none">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Search</h3>
+        <button class="modal-close" id="search-close-btn">
+          <i class="codicon codicon-close"></i>
+        </button>
+      </div>
+      <div class="search-input-row">
+        <input type="text" id="search-input" class="form-input" placeholder="Ask a question or search your tasks...">
+        <button class="btn btn-primary" id="search-trigger-btn">Search</button>
+      </div>
+      <div id="search-loading" class="ai-loading" style="display:none">Searching...</div>
+      <div class="search-results-container" id="search-results"></div>
+    </div>
+  </div>
+
+  <!-- Input Modal (for file/folder/rename) -->
+  <div id="input-modal" class="modal" style="display:none">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Input</h3>
+        <button class="close-btn modal-close">
+          <i class="codicon codicon-close"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <input type="text" class="form-input" placeholder="">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary">Cancel</button>
+        <button class="btn btn-primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal (for delete) -->
+  <div id="confirm-modal" class="modal" style="display:none">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Confirm</h3>
+        <button class="close-btn modal-close">
+          <i class="codicon codicon-close"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="confirm-message">Are you sure?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary">Cancel</button>
+        <button class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div id="context-menu" class="context-menu" style="display:none"></div>
+
+  <!-- Monaco Loader -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+
+  <!-- IDE Components -->
+  <script src="ide/utils/monaco-setup.js"></script>
+  <script src="ide/services/AutoSaver.js"></script>
+  <script src="ide/components/FileTree.js"></script>
+  <script src="ide/components/Editor.js"></script>
+  <script src="ide/components/DashboardWidget.js"></script>
+  <script src="ide/components/ContextMenu.js"></script>
+  <script src="ide/components/Resizer.js"></script>
+  <script src="ide/components/ThemeToggle.js"></script>
+  <script src="ide/components/SearchModal.js"></script>
+  <script src="ide/app.js"></script>
+</body>
+</html>
