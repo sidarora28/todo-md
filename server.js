@@ -1599,7 +1599,7 @@ function buildFileTree(dirPath, basePath = '') {
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
 
   // Whitelist: only show these folders and files at root level
-  const ALLOWED_ROOT = ['projects', 'daily', 'inbox', 'ideas', 'inbox.md', 'tasks.md'];
+  const ALLOWED_ROOT = ['projects', 'daily', 'inbox', 'ideas', 'inbox.md', 'tasks.md', 'HOWTOUSE.md'];
 
   const children = entries
     .filter(e => {
