@@ -15,7 +15,6 @@ ide/               → Frontend code (vanilla JS, ES modules)
   services/        → AutoSaver
   styles/          → CSS (VS Code Dark+ theme)
   utils/           → Monaco Editor setup
-dashboard.html     → Standalone dashboard view
 setup.js           → Interactive setup wizard
 docs/API.md        → API endpoint documentation
 ```
@@ -25,7 +24,7 @@ docs/API.md        → API endpoint documentation
 - Express serves static files from the project root
 - API endpoints handle file CRUD, task syncing, LLM inference, and dashboard data generation
 - All data is stored as plain `.md` files on disk — no database
-- LLM calls go through OpenRouter (optional, requires API key in `.env`)
+- LLM calls support OpenAI, Anthropic, and OpenRouter (optional, requires API key in `.env`)
 
 ## File Formats
 

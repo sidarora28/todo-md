@@ -8,7 +8,7 @@ Initial release.
 - Dashboard with project progress, overdue tasks, and daily focus
 - Quick capture via `tasks.md` with auto project sync
 - Daily planning files auto-generated from task due dates
-- AI-powered search and project inference (optional, via OpenRouter)
+- AI-powered search and project inference (optional, via OpenAI, Anthropic, or OpenRouter)
 - Project management with milestones and progress tracking
 - Inbox capture and processing
 - Interactive setup wizard

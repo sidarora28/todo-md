@@ -1,4 +1,4 @@
-<!-- This file tracks overall progress for this project. Update milestones and progress as you complete tasks. Monthly task files are in the tasks/ subfolder. -->
+<!-- Project settings: status can be "active", "paused", or "complete". target-date can be a date like 2026-06-01 or "ongoing". -->
 
 ---
 type: project

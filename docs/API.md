@@ -46,7 +46,7 @@ All file-system endpoints enforce path safety rules. A request is rejected with 
 - Contains `..` segments.
 - Touches any blacklisted name: `node_modules`, `.git`, `.env`, `server.js`, `package.json`, `package-lock.json`.
 
-Additionally, the following files are protected from deletion: `CLAUDE.md`, `README.md`, `server.js`, `package.json`, `dashboard.html`.
+Additionally, the following files are protected from deletion: `README.md`, `server.js`, `package.json`.
 
 ---
 
@@ -596,7 +596,7 @@ This endpoint performs automatic processing depending on the file being saved:
 
 | File | Behavior |
 |---|---|
-| `tasks.md` | Parses unchecked tasks in `- [ ] title \| due \| project` format. Tasks without a project are auto-assigned via LLM inference (OpenRouter API) if `OPENROUTER_API_KEY` is set, otherwise they default to `"others"`. Each parsed task is created in the appropriate project monthly file and the line in `tasks.md` is replaced with a strikethrough confirmation. Completed tasks exceeding 50 are archived to `tasks-archive-YYYY-MM.md`. |
+| `tasks.md` | Parses unchecked tasks in `- [ ] title \| due \| project` format. Tasks without a project are auto-assigned via LLM inference (OpenAI, Anthropic, or OpenRouter) if an LLM API key is configured, otherwise they default to `"others"`. Each parsed task is created in the appropriate project monthly file and the line in `tasks.md` is replaced with a strikethrough confirmation. Completed tasks exceeding 50 are archived to `tasks-archive-YYYY-MM.md`. |
 | `inbox.md` | Inserts today's date header (`## YYYY-MM-DD`) if not already present. Entries older than 30 days are archived to `inbox-archive-YYYY-MM.md`. |
 | `daily/*.md` | Checked tasks (`- [x] Title (project)`) are synced back to project monthly files -- marked as `done` with a `completed` date, and moved to the "Completed Tasks" section. |
 | `projects/*/tasks/YYYY-MM.md` | After saving, if today's daily file exists, it is regenerated to reflect updated due dates and statuses. |
@@ -689,7 +689,7 @@ Delete a file or directory.
 
 **Notes:**
 - Directories are deleted recursively.
-- Protected files (`CLAUDE.md`, `DECISIONS.md`, `README.md`, `server.js`, `package.json`, `dashboard.html`) cannot be deleted.
+- Protected files (`README.md`, `server.js`, `package.json`) cannot be deleted.
 
 ---
 
@@ -862,4 +862,7 @@ Tasks in daily files use checkbox format with the project in parentheses:
 
 | Variable | Required | Description |
 |---|---|---|
-| `OPENROUTER_API_KEY` | No | API key for OpenRouter. Used for LLM-powered project inference when tasks in `tasks.md` lack an explicit project. If not set, unassigned tasks default to the `"others"` project. |
+| `LLM_PROVIDER` | No | LLM provider: `openai`, `anthropic`, or `openrouter`. Auto-detected from key prefix if not set. |
+| `LLM_API_KEY` | No | API key for your LLM provider. Provider is auto-detected from key prefix (`sk-` → OpenAI, `sk-ant-` → Anthropic, `sk-or-v1-` → OpenRouter). |
+| `LLM_MODEL` | No | Override the default model. Defaults: `gpt-4o` (OpenAI), `claude-sonnet-4-5-20250929` (Anthropic), `anthropic/claude-sonnet-4-5` (OpenRouter). |
+| `OPENROUTER_API_KEY` | No | Legacy. Equivalent to setting `LLM_API_KEY` with OpenRouter. Still works for backwards compatibility. |
