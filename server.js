@@ -70,19 +70,19 @@ function getLLMConfig() {
     openai: {
       provider: 'openai',
       apiKey,
-      model: explicitModel || legacyModel || 'gpt-4o',
+      model: explicitModel || legacyModel || 'gpt-5-mini',
       endpoint: 'https://api.openai.com/v1/chat/completions'
     },
     anthropic: {
       provider: 'anthropic',
       apiKey,
-      model: explicitModel || legacyModel || 'claude-sonnet-4-5-20250929',
+      model: explicitModel || legacyModel || 'claude-opus-4-5-20250929',
       endpoint: 'https://api.anthropic.com/v1/messages'
     },
     openrouter: {
       provider: 'openrouter',
       apiKey,
-      model: explicitModel || legacyModel || 'anthropic/claude-sonnet-4-5',
+      model: explicitModel || legacyModel || 'anthropic/claude-opus-4-5',
       endpoint: 'https://openrouter.ai/api/v1/chat/completions'
     }
   };
