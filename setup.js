@@ -170,10 +170,10 @@ async function setup() {
       log('Pick an AI provider:', 'bright');
       console.log();
       log('  1. OpenAI        — Powers ChatGPT. Most popular choice.', 'white');
-      log('                     Default model: GPT-4o', 'yellow');
+      log('                     Default model: GPT-5 mini', 'yellow');
       console.log();
       log('  2. Anthropic     — Powers Claude. Great for reasoning.', 'white');
-      log('                     Default model: Claude Sonnet', 'yellow');
+      log('                     Default model: Claude Opus', 'yellow');
       console.log();
       log('  3. OpenRouter    — A single key that works with ANY model', 'white');
       log('                     (OpenAI, Anthropic, Google, etc).', 'white');
@@ -184,7 +184,7 @@ async function setup() {
 
       const providers = {
         '1': {
-          name: 'openai', label: 'OpenAI', prefix: 'sk-', model: 'gpt-4o',
+          name: 'openai', label: 'OpenAI', prefix: 'sk-', model: 'gpt-5-mini',
           url: 'https://platform.openai.com/api-keys',
           steps: [
             'Go to: https://platform.openai.com/api-keys',
@@ -195,7 +195,7 @@ async function setup() {
           ]
         },
         '2': {
-          name: 'anthropic', label: 'Anthropic', prefix: 'sk-ant-', model: 'claude-sonnet-4-5-20250929',
+          name: 'anthropic', label: 'Anthropic', prefix: 'sk-ant-', model: 'claude-opus-4-5-20250929',
           url: 'https://console.anthropic.com/',
           steps: [
             'Go to: https://console.anthropic.com/',
@@ -206,7 +206,7 @@ async function setup() {
           ]
         },
         '3': {
-          name: 'openrouter', label: 'OpenRouter', prefix: 'sk-or-v1-', model: 'anthropic/claude-sonnet-4-5',
+          name: 'openrouter', label: 'OpenRouter', prefix: 'sk-or-v1-', model: 'anthropic/claude-opus-4-5',
           url: 'https://openrouter.ai/keys',
           steps: [
             'Go to: https://openrouter.ai/keys',
