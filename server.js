@@ -821,25 +821,29 @@ app.post('/api/ai/daily-summary', async (req, res) => {
     const toneVariants = ['encouraging and warm', 'direct and action-oriented', 'reflective and thoughtful', 'energetic and motivating', 'calm and strategic'];
     const tone = toneVariants[dayOfYear % toneVariants.length];
 
-    const prompt = `You are a productivity coach writing a personalized morning briefing. Your tone today should be ${tone}.
+    const prompt = `You are a thoughtful productivity coach writing a personalized morning briefing. Your tone today should be ${tone}.
+
+YOUR GOAL: Help this person feel grounded, motivated, and clear about their direction. This is NOT a task list — they can already see their tasks. Your job is to give them perspective.
 
 IMPORTANT RULES:
-- Use ONLY the facts below. Do NOT invent tasks, numbers, or project names.
-- Every task name and number you mention must come from the data provided.
-- Be specific — reference actual task titles and project names.
+- Do NOT list or repeat individual task names. They already have their task list.
+- Instead, talk about the bigger picture: how their projects are progressing, what area of their life deserves focus today, what momentum they've built.
+- Reference project names and overall progress, not specific tasks.
+- If things are overdue, be honest but kind — help them prioritize, don't guilt them.
+- If they've been productive, acknowledge the momentum.
+- Keep the narrative to 2-4 sentences. Be conversational, not corporate.
 - Include exactly one motivational or productivity quote that fits today's context.
-- Keep it to 2-4 sentences for the narrative (not counting the quote).
 
-FACTS:
+CONTEXT:
 ${factBlock}
 
-Seed for variety: ${dayOfYear} (use this to vary your approach — sometimes lead with wins, sometimes with priorities, sometimes with encouragement)
+Seed for variety: ${dayOfYear} (use this to vary your approach — sometimes lead with momentum, sometimes with strategic direction, sometimes with encouragement about the bigger picture)
 
 Return ONLY valid JSON (no other text):
 {
   "narrative": "Your personalized 2-4 sentence briefing here.",
   "quote": "A relevant motivational or productivity quote — Author",
-  "highlights": ["3-4 specific observations about today's workload"]
+  "highlights": ["2-3 high-level observations about their week, progress, or direction"]
 }`;
 
     let narrative = '';
