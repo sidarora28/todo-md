@@ -2,14 +2,23 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Desktop app mode: DATA_DIR and APP_ROOT are set by electron/main.js via process.env.
+// Standalone mode: both default to __dirname (original behavior).
+const APP_ROOT = process.env.APP_ROOT || __dirname;
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+
+// Load .env only in standalone mode (desktop app uses electron/config.js instead)
+if (!process.env.APP_ROOT) {
+  require('dotenv').config({ path: path.join(__dirname, '.env') });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors({ origin: `http://localhost:${PORT}` }));
+app.use(cors({ origin: /^http:\/\/localhost(:\d+)?$/ }));
 app.use(express.json());
-app.use(express.static(__dirname, {
+app.use(express.static(APP_ROOT, {
   dotfiles: 'deny',
   index: false,
   extensions: ['html', 'css', 'js', 'png', 'jpg', 'gif', 'svg', 'ico', 'woff', 'woff2', 'ttf']
@@ -22,7 +31,7 @@ app.get('/', (req, res) => {
 
 // Helper function to read dashboard data
 function getDashboardData() {
-  const dataPath = path.join(__dirname, 'dashboard-data.json');
+  const dataPath = path.join(DATA_DIR, 'dashboard-data.json');
   if (fs.existsSync(dataPath)) {
     return JSON.parse(fs.readFileSync(dataPath, 'utf8'));
   }
@@ -31,7 +40,7 @@ function getDashboardData() {
 
 // Helper function to write dashboard data
 function saveDashboardData(data) {
-  const dataPath = path.join(__dirname, 'dashboard-data.json');
+  const dataPath = path.join(DATA_DIR, 'dashboard-data.json');
   fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
 }
 
@@ -158,7 +167,7 @@ async function callLLM(prompt, options = {}) {
 
 // Shared helper to gather all tasks from project files
 function getAllActiveTasks() {
-  const projectsDir = path.join(__dirname, 'projects');
+  const projectsDir = path.join(DATA_DIR, 'projects');
   const allTasks = [];
   const completedThisWeek = [];
   const weekAgo = new Date();
@@ -312,16 +321,16 @@ function getMonthlyFilePath(projectName) {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  return path.join(__dirname, 'projects', projectName, 'tasks', `${year}-${month}.md`);
+  return path.join(DATA_DIR, 'projects', projectName, 'tasks', `${year}-${month}.md`);
 }
 
 // Helper function to generate daily file from all monthly task files
 function generateDailyFile(date) {
-  const projectsDir = path.join(__dirname, 'projects');
-  const dailyFilePath = path.join(__dirname, 'daily', `${date}.md`);
+  const projectsDir = path.join(DATA_DIR, 'projects');
+  const dailyFilePath = path.join(DATA_DIR, 'daily', `${date}.md`);
 
   // Ensure daily directory exists
-  const dailyDir = path.join(__dirname, 'daily');
+  const dailyDir = path.join(DATA_DIR, 'daily');
   if (!fs.existsSync(dailyDir)) {
     fs.mkdirSync(dailyDir, { recursive: true });
   }
@@ -416,9 +425,9 @@ function addTaskToMonthlyFile(title, projectKey, date) {
   const monthlyFilePath = getMonthlyFilePath(projectKey);
   if (!fs.existsSync(monthlyFilePath)) {
     // Create monthly file if project exists
-    const projectDir = path.join(__dirname, 'projects', projectKey, 'tasks');
+    const projectDir = path.join(DATA_DIR, 'projects', projectKey, 'tasks');
     if (!fs.existsSync(projectDir)) {
-      const projectRoot = path.join(__dirname, 'projects', projectKey);
+      const projectRoot = path.join(DATA_DIR, 'projects', projectKey);
       if (!fs.existsSync(projectRoot)) return false;
       fs.mkdirSync(projectDir, { recursive: true });
     }
@@ -495,7 +504,7 @@ async function syncNewTasksFromDaily(dailyContent, date) {
 
   // For tasks without a project, use LLM inference
   if (tasksWithoutProject.length > 0) {
-    const projectsDir = path.join(__dirname, 'projects');
+    const projectsDir = path.join(DATA_DIR, 'projects');
     const availableProjects = fs.existsSync(projectsDir)
       ? fs.readdirSync(projectsDir).filter(p => {
           const projectPath = path.join(projectsDir, p);
@@ -774,7 +783,7 @@ app.post('/api/ai/daily-summary', async (req, res) => {
 
     // Gather project context from PROJECT.md files
     const projectContext = [];
-    const projectsDir = path.join(__dirname, 'projects');
+    const projectsDir = path.join(DATA_DIR, 'projects');
     if (fs.existsSync(projectsDir)) {
       fs.readdirSync(projectsDir, { withFileTypes: true })
         .filter(d => d.isDirectory())
@@ -935,9 +944,9 @@ function collectAllMarkdownFiles() {
     });
   };
 
-  searchDirs.forEach(dir => collectDir(path.join(__dirname, dir), dir));
+  searchDirs.forEach(dir => collectDir(path.join(DATA_DIR, dir), dir));
   ['tasks.md', 'inbox.md'].forEach(f => {
-    const fp = path.join(__dirname, f);
+    const fp = path.join(DATA_DIR, f);
     if (fs.existsSync(fp)) files.push({ file: f, content: fs.readFileSync(fp, 'utf8') });
   });
   return files;
@@ -945,7 +954,7 @@ function collectAllMarkdownFiles() {
 
 // GET /api/ai/test - Diagnostic endpoint to test LLM connectivity
 app.get('/api/ai/test', async (req, res) => {
-  const envPath = path.join(__dirname, '.env');
+  const envPath = path.join(DATA_DIR, '.env');
   const envExists = fs.existsSync(envPath);
   const config = getLLMConfig();
 
@@ -1133,7 +1142,7 @@ app.get('/api/daily/ensure', (req, res) => {
   try {
     const { date } = req.query;
     const targetDate = date || new Date().toISOString().split('T')[0];
-    const dailyFilePath = path.join(__dirname, 'daily', `${targetDate}.md`);
+    const dailyFilePath = path.join(DATA_DIR, 'daily', `${targetDate}.md`);
 
     let generated = false;
 
@@ -1161,7 +1170,7 @@ app.post('/api/files/ensure-capture-files', (req, res) => {
     let created = [];
 
     // Ensure inbox.md exists
-    const inboxPath = path.join(__dirname, 'inbox.md');
+    const inboxPath = path.join(DATA_DIR, 'inbox.md');
     if (!fs.existsSync(inboxPath)) {
       const inboxContent = `<!-- Instructions: Use this as a scratchpad for random thoughts, ideas, and notes. Entries are automatically organized by date when you save. No need to format - just type freely. -->\n\n## ${today}\n`;
       fs.writeFileSync(inboxPath, inboxContent, 'utf8');
@@ -1169,7 +1178,7 @@ app.post('/api/files/ensure-capture-files', (req, res) => {
     }
 
     // Ensure tasks.md exists
-    const tasksPath = path.join(__dirname, 'tasks.md');
+    const tasksPath = path.join(DATA_DIR, 'tasks.md');
     if (!fs.existsSync(tasksPath)) {
       const tasksContent = `<!-- Instructions: Quickly capture tasks here using format: task name | due date | project (optional). Tasks sync to project files on save. Leave project blank to auto-detect. -->\n\n## Examples (Reference - Do Not Delete)\n- [ ] Review project roadmap | 2026-02-10 | sample-project\n- [ ] Plan sprint goals | 2026-02-15 | sample-project\n\n## Your Tasks\n`;
       fs.writeFileSync(tasksPath, tasksContent, 'utf8');
@@ -1423,7 +1432,7 @@ app.post('/api/projects/create', (req, res) => {
       return res.status(400).json({ error: 'Project key must be lowercase with hyphens only' });
     }
 
-    const projectDir = path.join(__dirname, 'projects', projectKey);
+    const projectDir = path.join(DATA_DIR, 'projects', projectKey);
 
     // Check if project already exists
     if (fs.existsSync(projectDir)) {
@@ -1505,7 +1514,7 @@ app.post('/api/inbox/process', (req, res) => {
     }
 
     // Find and read inbox file
-    const inboxDir = path.join(__dirname, 'inbox');
+    const inboxDir = path.join(DATA_DIR, 'inbox');
     const inboxFiles = fs.readdirSync(inboxDir).filter(f => f.endsWith('.md'));
 
     let inboxFilePath = null;
@@ -1589,11 +1598,11 @@ ${title}
 
 // Security helper function
 function isPathSafe(requestedPath) {
-  const resolved = path.resolve(__dirname, requestedPath);
+  const resolved = path.resolve(DATA_DIR, requestedPath);
   const blacklist = ['node_modules', '.git', '.env', 'server.js', 'setup.js', 'package.json', 'package-lock.json'];
   const segments = requestedPath.split(path.sep);
 
-  return (resolved === __dirname || resolved.startsWith(__dirname + path.sep)) &&
+  return (resolved === DATA_DIR || resolved.startsWith(DATA_DIR + path.sep)) &&
          !requestedPath.includes('..') &&
          !blacklist.some(blocked => segments.includes(blocked));
 }
@@ -1661,7 +1670,7 @@ app.get('/api/files/tree', (req, res) => {
       type: 'directory',
       name: 'root',
       path: '',
-      children: buildFileTree(__dirname)
+      children: buildFileTree(DATA_DIR)
     };
     res.json({ tree });
   } catch (error) {
@@ -1683,7 +1692,7 @@ app.get('/api/files/read', (req, res) => {
       return res.status(403).json({ error: 'Invalid or unsafe file path' });
     }
 
-    const fullPath = path.join(__dirname, filePath);
+    const fullPath = path.join(DATA_DIR, filePath);
 
     if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ error: 'File not found' });
@@ -1730,7 +1739,7 @@ function archiveCompletedTasks(content) {
     // Create archive file
     const now = new Date();
     const archiveFile = `tasks-archive-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.md`;
-    const archivePath = path.join(__dirname, archiveFile);
+    const archivePath = path.join(DATA_DIR, archiveFile);
 
     // Append to archive file
     const archiveHeader = `# Archived Tasks - ${now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}\n\n`;
@@ -1812,7 +1821,7 @@ function archiveOldInboxEntries(content) {
     // Create archive file
     const now = new Date();
     const archiveFile = `inbox-archive-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.md`;
-    const archivePath = path.join(__dirname, archiveFile);
+    const archivePath = path.join(DATA_DIR, archiveFile);
 
     const archiveHeader = `# Archived Inbox - ${now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}\n\n`;
     let archiveContent = '';
@@ -1867,7 +1876,7 @@ async function processTasks(content) {
   }
 
   // Get available projects
-  const projectsDir = path.join(__dirname, 'projects');
+  const projectsDir = path.join(DATA_DIR, 'projects');
   const availableProjects = fs.existsSync(projectsDir)
     ? fs.readdirSync(projectsDir).filter(p => {
         const projectPath = path.join(projectsDir, p);
@@ -1912,7 +1921,7 @@ async function processTasks(content) {
       const dueDate = task.dueDate ? new Date(task.dueDate) : new Date();
       const year = dueDate.getFullYear();
       const month = String(dueDate.getMonth() + 1).padStart(2, '0');
-      const monthlyFilePath = path.join(__dirname, 'projects', projectName, 'tasks', `${year}-${month}.md`);
+      const monthlyFilePath = path.join(DATA_DIR, 'projects', projectName, 'tasks', `${year}-${month}.md`);
 
       // Ensure project and tasks directory exist
       const tasksDir = path.dirname(monthlyFilePath);
@@ -1987,7 +1996,7 @@ app.post('/api/files/write', async (req, res) => {
       return res.status(403).json({ error: 'Invalid or unsafe file path' });
     }
 
-    const fullPath = path.join(__dirname, filePath);
+    const fullPath = path.join(DATA_DIR, filePath);
 
     // Conflict detection
     if (fs.existsSync(fullPath) && lastModified) {
@@ -2067,7 +2076,7 @@ app.post('/api/files/write', async (req, res) => {
       // If saving a monthly task file, regenerate today's daily file
       if (filePath.match(/^projects\/[^/]+\/tasks\/\d{4}-\d{2}\.md$/)) {
         const today = new Date().toISOString().split('T')[0];
-        const todayFilePath = path.join(__dirname, 'daily', `${today}.md`);
+        const todayFilePath = path.join(DATA_DIR, 'daily', `${today}.md`);
 
         // Only regenerate if today's file exists (don't create it unexpectedly)
         if (fs.existsSync(todayFilePath)) {
@@ -2103,7 +2112,7 @@ app.post('/api/files/create', (req, res) => {
       return res.status(403).json({ error: 'Invalid or unsafe file path' });
     }
 
-    const fullPath = path.join(__dirname, filePath);
+    const fullPath = path.join(DATA_DIR, filePath);
 
     if (fs.existsSync(fullPath)) {
       return res.status(400).json({ error: 'File or directory already exists' });
@@ -2147,7 +2156,7 @@ app.post('/api/files/delete', (req, res) => {
       return res.status(403).json({ error: 'Cannot delete protected system file' });
     }
 
-    const fullPath = path.join(__dirname, filePath);
+    const fullPath = path.join(DATA_DIR, filePath);
 
     if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ error: 'File not found' });
@@ -2180,8 +2189,8 @@ app.post('/api/files/rename', (req, res) => {
       return res.status(403).json({ error: 'Invalid or unsafe file path' });
     }
 
-    const fullOldPath = path.join(__dirname, oldPath);
-    const fullNewPath = path.join(__dirname, newPath);
+    const fullOldPath = path.join(DATA_DIR, oldPath);
+    const fullNewPath = path.join(DATA_DIR, newPath);
 
     if (!fs.existsSync(fullOldPath)) {
       return res.status(404).json({ error: 'Source file not found' });
@@ -2213,7 +2222,7 @@ app.post('/api/files/mkdir', (req, res) => {
       return res.status(403).json({ error: 'Invalid or unsafe directory path' });
     }
 
-    const fullPath = path.join(__dirname, dirPath);
+    const fullPath = path.join(DATA_DIR, dirPath);
 
     if (fs.existsSync(fullPath)) {
       return res.status(400).json({ error: 'Directory already exists' });
@@ -2253,7 +2262,7 @@ app.post('/api/tasks/sync-today', (req, res) => {
 
       // Determine monthly file path
       const [year, month] = date.split('-');
-      const monthlyFile = path.join(__dirname, 'projects', projectName, 'tasks', `${year}-${month}.md`);
+      const monthlyFile = path.join(DATA_DIR, 'projects', projectName, 'tasks', `${year}-${month}.md`);
 
       if (!fs.existsSync(monthlyFile)) {
         console.log(`Monthly file not found for project ${projectName}`);
@@ -2340,6 +2349,13 @@ created: ${date}
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Task system server running at http://localhost:${PORT}`);
+// Start the server.
+// PORT=0 lets the OS pick a free port (used by Electron).
+// In standalone mode, PORT defaults to 3000.
+const server = app.listen(PORT, () => {
+  const actualPort = server.address().port;
+  console.log(`Task system server running at http://localhost:${actualPort}`);
 });
+
+// Export for Electron's main process to get the server instance and port
+module.exports = server;

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToDo.md — Settings</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      padding: 32px;
+      user-select: none;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      color: #f5f5f5;
+    }
+
+    .section {
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #313244;
+    }
+    .section:last-child { border-bottom: none; }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #a6adc8;
+      margin-bottom: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #bac2de;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #7f849c;
+      margin-top: 4px;
+    }
+
+    .folder-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .folder-path {
+      flex: 1;
+      padding: 10px 12px;
+      background: #313244;
+      border: 1px solid #45475a;
+      border-radius: 6px;
+      color: #cdd6f4;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      word-break: break-all;
+    }
+
+    input[type="text"], input[type="password"], input[type="number"], select {
+      width: 100%;
+      padding: 10px 12px;
+      background: #313244;
+      border: 1px solid #45475a;
+      border-radius: 6px;
+      color: #cdd6f4;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus {
+      border-color: #89b4fa;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+    }
+    .row > .form-group { flex: 1; }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 16px;
+      transition: background 0.15s;
+    }
+
+    .btn-secondary {
+      background: #45475a;
+      color: #cdd6f4;
+    }
+    .btn-secondary:hover { background: #585b70; }
+
+    .btn-small {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .btn-primary {
+      background: #89b4fa;
+      color: #1e1e2e;
+      font-weight: 600;
+    }
+    .btn-primary:hover { background: #74c7ec; }
+
+    .actions {
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .version {
+      font-size: 12px;
+      color: #585b70;
+    }
+
+    .saved-msg {
+      color: #a6e3a1;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .saved-msg.show { opacity: 1; }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+
+    .toggle-label {
+      font-size: 13px;
+      color: #cdd6f4;
+    }
+
+    .toggle {
+      width: 44px;
+      height: 24px;
+      background: #45475a;
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle.on { background: #89b4fa; }
+    .toggle::after {
+      content: '';
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(20px); }
+  </style>
+</head>
+<body>
+  <h1>Settings</h1>
+
+  <!-- Data Folder -->
+  <div class="section">
+    <div class="section-title">Data Folder</div>
+    <div class="form-group">
+      <div class="folder-row">
+        <div class="folder-path" id="data-dir-display">—</div>
+        <button class="btn-secondary btn-small" id="change-dir-btn">Change</button>
+        <button class="btn-secondary btn-small" id="open-dir-btn">Open</button>
+      </div>
+      <div class="hint">Where your projects, daily files, and tasks are stored.</div>
+    </div>
+  </div>
+
+  <!-- AI Settings -->
+  <div class="section">
+    <div class="section-title">AI Features</div>
+    <div class="form-group">
+      <label>Provider</label>
+      <select id="llm-provider">
+        <option value="">Disabled</option>
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Anthropic</option>
+        <option value="openrouter">OpenRouter</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>API Key</label>
+      <input type="password" id="llm-api-key" placeholder="sk-...">
+      <div class="hint">Stored locally. Never sent anywhere except to your chosen provider.</div>
+    </div>
+    <div class="form-group">
+      <label>Model (optional)</label>
+      <input type="text" id="llm-model" placeholder="Leave blank for default">
+      <div class="hint">Override the default model. E.g., gpt-5-mini, claude-opus-4-5</div>
+    </div>
+  </div>
+
+  <!-- Editor Settings -->
+  <div class="section">
+    <div class="section-title">Editor</div>
+    <div class="row">
+      <div class="form-group">
+        <label>Font Size</label>
+        <input type="number" id="editor-font-size" min="10" max="24" value="14">
+      </div>
+      <div class="form-group">
+        <label>Word Wrap</label>
+        <select id="editor-word-wrap">
+          <option value="on">On</option>
+          <option value="off">Off</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Font Family</label>
+      <input type="text" id="editor-font-family" placeholder="JetBrains Mono, Menlo, Monaco, monospace">
+    </div>
+  </div>
+
+  <!-- App Settings -->
+  <div class="section">
+    <div class="section-title">App</div>
+    <div class="toggle-row">
+      <span class="toggle-label">Auto-check for updates</span>
+      <div class="toggle" id="auto-update-toggle"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <span class="version" id="version-label">v—</span>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <span class="saved-msg" id="saved-msg">Saved</span>
+      <button class="btn-primary" id="save-btn">Save</button>
+    </div>
+  </div>
+
+  <script>
+    let config = {};
+
+    async function loadConfig() {
+      config = await window.todomd.getConfig();
+
+      document.getElementById('data-dir-display').textContent = config.dataDir || '—';
+      document.getElementById('llm-provider').value = config.llmProvider || '';
+      document.getElementById('llm-api-key').value = config.llmApiKey || '';
+      document.getElementById('llm-model').value = config.llmModel || '';
+      document.getElementById('editor-font-size').value = config.editorFontSize || 14;
+      document.getElementById('editor-word-wrap').value = config.editorWordWrap || 'on';
+      document.getElementById('editor-font-family').value = config.editorFontFamily || '';
+
+      const toggle = document.getElementById('auto-update-toggle');
+      if (config.autoUpdate !== false) toggle.classList.add('on');
+      else toggle.classList.remove('on');
+
+      const version = await window.todomd.getAppVersion();
+      document.getElementById('version-label').textContent = `v${version}`;
+    }
+
+    // Toggle click
+    document.getElementById('auto-update-toggle').addEventListener('click', function() {
+      this.classList.toggle('on');
+    });
+
+    // Change data dir
+    document.getElementById('change-dir-btn').addEventListener('click', async () => {
+      const newDir = await window.todomd.changeDataDir();
+      if (newDir) {
+        document.getElementById('data-dir-display').textContent = newDir;
+        config.dataDir = newDir;
+      }
+    });
+
+    // Open data dir
+    document.getElementById('open-dir-btn').addEventListener('click', () => {
+      window.todomd.openDataFolder();
+    });
+
+    // Save
+    document.getElementById('save-btn').addEventListener('click', async () => {
+      const updates = {
+        llmProvider: document.getElementById('llm-provider').value || null,
+        llmApiKey: document.getElementById('llm-api-key').value.trim() || null,
+        llmModel: document.getElementById('llm-model').value.trim() || null,
+        editorFontSize: parseInt(document.getElementById('editor-font-size').value) || 14,
+        editorWordWrap: document.getElementById('editor-word-wrap').value,
+        editorFontFamily: document.getElementById('editor-font-family').value.trim() || null,
+        autoUpdate: document.getElementById('auto-update-toggle').classList.contains('on')
+      };
+
+      // Only update dataDir if it changed
+      if (config.dataDir !== document.getElementById('data-dir-display').textContent) {
+        updates.dataDir = document.getElementById('data-dir-display').textContent;
+      }
+
+      await window.todomd.saveConfig(updates);
+
+      const msg = document.getElementById('saved-msg');
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 2000);
+    });
+
+    loadConfig();
+  </script>
+</body>
+</html>

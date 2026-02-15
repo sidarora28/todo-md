@@ -2,18 +2,26 @@
   "name": "todo-md",
   "version": "1.0.0",
   "description": "Markdown-first task management with a built-in web IDE",
-  "main": "server.js",
+  "main": "electron/main.js",
   "scripts": {
     "setup": "node setup.js",
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "electron": "electron .",
+    "electron:dev": "NODE_ENV=development electron .",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
   },
   "keywords": [
     "task-management",
     "productivity",
     "markdown",
     "todo",
-    "web-ide"
+    "web-ide",
+    "desktop-app",
+    "electron"
   ],
   "repository": {
     "type": "git",
@@ -24,6 +32,60 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.4",
+    "electron-updater": "^6.7.3",
     "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "electron": "^40.4.1",
+    "electron-builder": "^26.7.0"
+  },
+  "build": {
+    "appId": "com.todomd.app",
+    "productName": "ToDo.md",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "server.js",
+      "ide.html",
+      "ide/**/*",
+      "HOWTOUSE.md",
+      "package.json",
+      "node_modules/**/*",
+      "!node_modules/electron/**",
+      "!node_modules/electron-builder/**"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "electron/icons/icon.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "icon": "electron/icons/icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "icon": "electron/icons",
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "sidarora28",
+      "repo": "todo-md"
+    }
   }
 }
