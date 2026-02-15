@@ -12,7 +12,7 @@
     "dist": "electron-builder",
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
-    "dist:linux": "electron-builder --linux"
+    "generate-icons": "node scripts/generate-icons.js"
   },
   "keywords": [
     "task-management",
@@ -58,25 +58,17 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "icon": "electron/icons/icon.icns",
+      "icon": "electron/icons/icon.png",
       "target": [
         "dmg",
         "zip"
       ]
     },
     "win": {
-      "icon": "electron/icons/icon.ico",
+      "icon": "electron/icons/icon.png",
       "target": [
         "nsis"
       ]
-    },
-    "linux": {
-      "icon": "electron/icons",
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "category": "Office"
     },
     "nsis": {
       "oneClick": false,
