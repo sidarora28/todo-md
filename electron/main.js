@@ -12,6 +12,9 @@ const config = require('./config');
 const { buildMenu } = require('./menu');
 const { initAutoUpdater, checkForUpdates } = require('./updater');
 
+// Set the app name (shows in macOS menu bar during development)
+app.name = 'ToDo.md';
+
 // Keep references so they don't get garbage collected
 let mainWindow = null;
 let setupWindow = null;
