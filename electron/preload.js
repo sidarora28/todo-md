@@ -10,6 +10,15 @@ contextBridge.exposeInMainWorld('todomd', {
   pickDataFolder: () => ipcRenderer.invoke('pick-data-folder'),
   completeSetup: (data) => ipcRenderer.invoke('complete-setup', data),
 
+  // Auth
+  login: (data) => ipcRenderer.invoke('auth-login', data),
+  logout: () => ipcRenderer.invoke('auth-logout'),
+  getAuthStatus: () => ipcRenderer.invoke('auth-status'),
+
+  // Billing
+  openCheckout: (priceType) => ipcRenderer.invoke('billing-checkout', priceType),
+  openBillingPortal: () => ipcRenderer.invoke('billing-portal'),
+
   // Settings
   getConfig: () => ipcRenderer.invoke('get-config'),
   saveConfig: (updates) => ipcRenderer.invoke('save-config', updates),

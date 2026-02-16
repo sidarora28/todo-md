@@ -53,55 +53,70 @@ function extractJSON(text) {
 
 // Auto-detect LLM provider from API key prefix or explicit env vars
 // Returns { provider, apiKey, model, endpoint }
+// ─── AI Proxy ───────────────────────────────────────────────────
+// Routes LLM calls through the managed backend proxy.
+// Falls back to direct API calls if a legacy LLM_API_KEY is set.
+
+const PROXY_URL = process.env.PROXY_URL || 'https://todomd-api.vercel.app';
+
 function getLLMConfig() {
-  // Support explicit provider config
-  const explicitProvider = process.env.LLM_PROVIDER;
-  const explicitKey = process.env.LLM_API_KEY;
-  const explicitModel = process.env.LLM_MODEL;
-
-  // Legacy support
-  const legacyKey = process.env.OPENROUTER_API_KEY;
-  const legacyModel = process.env.OPENROUTER_MODEL;
-
-  const apiKey = explicitKey || legacyKey;
+  const apiKey = process.env.LLM_API_KEY || process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
-  // Determine provider: explicit > auto-detect from key prefix
-  let provider = explicitProvider;
+  let provider = process.env.LLM_PROVIDER;
   if (!provider) {
     if (apiKey.startsWith('sk-ant-')) provider = 'anthropic';
     else if (apiKey.startsWith('sk-or-v1-')) provider = 'openrouter';
     else if (apiKey.startsWith('sk-')) provider = 'openai';
-    else provider = 'openrouter'; // default fallback
+    else provider = 'openrouter';
   }
 
+  const model = process.env.LLM_MODEL || process.env.OPENROUTER_MODEL;
   const configs = {
-    openai: {
-      provider: 'openai',
-      apiKey,
-      model: explicitModel || legacyModel || 'gpt-5-mini',
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-    },
-    anthropic: {
-      provider: 'anthropic',
-      apiKey,
-      model: explicitModel || legacyModel || 'claude-opus-4-5-20250929',
-      endpoint: 'https://api.anthropic.com/v1/messages'
-    },
-    openrouter: {
-      provider: 'openrouter',
-      apiKey,
-      model: explicitModel || legacyModel || 'anthropic/claude-opus-4-5',
-      endpoint: 'https://openrouter.ai/api/v1/chat/completions'
-    }
+    openai:     { provider: 'openai',     apiKey, model: model || 'gpt-4o-mini', endpoint: 'https://api.openai.com/v1/chat/completions' },
+    anthropic:  { provider: 'anthropic',  apiKey, model: model || 'claude-sonnet-4-5-20250929', endpoint: 'https://api.anthropic.com/v1/messages' },
+    openrouter: { provider: 'openrouter', apiKey, model: model || 'anthropic/claude-sonnet-4-5', endpoint: 'https://openrouter.ai/api/v1/chat/completions' }
   };
-
   return configs[provider] || configs.openrouter;
 }
 
-// Shared LLM helper - calls OpenAI, Anthropic, or OpenRouter API
-// Returns { success: boolean, content: string|null, error: string|null }
+// Shared LLM helper — returns { success, content, error }
 async function callLLM(prompt, options = {}) {
+  // Prefer managed proxy if user is authenticated
+  const authToken = process.env.AUTH_TOKEN;
+  if (authToken) {
+    return callLLMProxy(prompt, options, authToken);
+  }
+  // Fallback: direct API call with legacy keys
+  return callLLMDirect(prompt, options);
+}
+
+// Call through managed backend proxy
+async function callLLMProxy(prompt, options, authToken) {
+  try {
+    const res = await fetch(`${PROXY_URL}/api/ai/proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ prompt, options: { maxTokens: options.maxTokens || 1024 } })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      console.error('Proxy error:', res.status, data.error);
+      return { success: false, content: null, error: data.error || `proxy_error_${res.status}` };
+    }
+    return { success: true, content: data.content, error: null };
+  } catch (error) {
+    console.error('Proxy call failed:', error.message);
+    return { success: false, content: null, error: 'network_error' };
+  }
+}
+
+// Direct LLM call (legacy — for users with their own API keys)
+async function callLLMDirect(prompt, options = {}) {
   const config = getLLMConfig();
   if (!config) {
     return { success: false, content: null, error: 'no_api_key' };
@@ -111,34 +126,17 @@ async function callLLM(prompt, options = {}) {
 
   try {
     let response;
-
     if (config.provider === 'anthropic') {
       response = await fetch(config.endpoint, {
         method: 'POST',
-        headers: {
-          'x-api-key': config.apiKey,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: maxTokens,
-          messages: [{ role: 'user', content: prompt }]
-        })
+        headers: { 'x-api-key': config.apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] })
       });
     } else {
-      // OpenAI and OpenRouter use the same format
       response = await fetch(config.endpoint, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${config.apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: maxTokens,
-          messages: [{ role: 'user', content: prompt }]
-        })
+        headers: { 'Authorization': `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] })
       });
     }
 
@@ -149,15 +147,12 @@ async function callLLM(prompt, options = {}) {
     }
 
     const data = await response.json();
-
-    // Anthropic uses a different response format
     let content;
     if (config.provider === 'anthropic') {
       content = data.content?.[0]?.text;
     } else {
       content = data.choices?.[0]?.message?.content;
     }
-
     return { success: true, content, error: null };
   } catch (error) {
     console.error('LLM call failed:', error.message);

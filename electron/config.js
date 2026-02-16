@@ -14,16 +14,24 @@ let cachedConfig = null;
 
 const DEFAULTS = {
   dataDir: null,         // User picks on first launch
-  llmProvider: null,     // openai | anthropic | openrouter
-  llmApiKey: null,
-  llmModel: null,
+  llmProvider: null,     // openai | anthropic | openrouter (legacy, kept for migration)
+  llmApiKey: null,       // legacy — new installs use managed proxy
+  llmModel: null,        // legacy
   theme: 'dark',
   editorFontSize: 14,
   editorFontFamily: 'JetBrains Mono, Menlo, Monaco, monospace',
   editorWordWrap: 'on',
   launchOnStartup: false,
   autoUpdate: true,
-  windowBounds: null     // { x, y, width, height }
+  windowBounds: null,    // { x, y, width, height }
+
+  // Auth (managed AI proxy)
+  authToken: null,       // Supabase JWT access token
+  authRefreshToken: null, // Supabase refresh token
+  userEmail: null,
+  userPlan: null,        // trial | active | lifetime | expired
+  trialEndsAt: null,
+  proxyUrl: null         // Override for dev; defaults to production
 };
 
 /**
@@ -107,6 +115,15 @@ function getServerEnv() {
   const config = getAll();
   const env = {};
 
+  // Auth token for the managed AI proxy
+  if (config.authToken) {
+    env.AUTH_TOKEN = config.authToken;
+  }
+  if (config.proxyUrl) {
+    env.PROXY_URL = config.proxyUrl;
+  }
+
+  // Legacy: direct LLM keys (for users who haven't migrated)
   if (config.llmApiKey) {
     env.LLM_API_KEY = config.llmApiKey;
   }

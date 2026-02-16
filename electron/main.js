@@ -19,8 +19,12 @@ app.name = 'ToDo.md';
 let mainWindow = null;
 let setupWindow = null;
 let settingsWindow = null;
+let loginWindow = null;
 let server = null;
 let serverPort = null;
+
+// Backend proxy URL (override via config for dev)
+const DEFAULT_PROXY_URL = 'https://todomd-api.vercel.app';
 
 // Determine the app root directory (where server.js, ide.html, etc. live)
 // In development: project root. In production: inside the app.asar archive.
@@ -34,6 +38,9 @@ app.whenReady().then(async () => {
 
   if (config.needsSetup()) {
     showSetupWindow();
+  } else if (!config.get('authToken')) {
+    // No auth token — show login window
+    showLoginWindow();
   } else {
     await startApp();
   }
@@ -49,6 +56,8 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     if (config.needsSetup()) {
       showSetupWindow();
+    } else if (!config.get('authToken')) {
+      showLoginWindow();
     } else {
       startApp();
     }
@@ -85,6 +94,39 @@ function showSetupWindow() {
     setupWindow = null;
     // If user closed setup without completing it, quit
     if (config.needsSetup()) {
+      app.quit();
+    }
+  });
+}
+
+// ─── Login Window ──────────────────────────────────────────────
+
+function showLoginWindow() {
+  if (loginWindow) {
+    loginWindow.focus();
+    return;
+  }
+
+  loginWindow = new BrowserWindow({
+    width: 440,
+    height: 480,
+    resizable: false,
+    maximizable: false,
+    title: 'ToDo.md — Sign In',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  loginWindow.loadFile(path.join(__dirname, 'login.html'));
+  loginWindow.setMenu(null);
+
+  loginWindow.on('closed', () => {
+    loginWindow = null;
+    // If user closed without signing in, quit
+    if (!config.get('authToken')) {
       app.quit();
     }
   });
@@ -247,7 +289,7 @@ ipcMain.handle('pick-data-folder', async () => {
 
 // Setup: save initial config and start the app
 ipcMain.handle('complete-setup', async (event, setupData) => {
-  const { dataDir, llmApiKey, llmProvider, llmModel } = setupData;
+  const { dataDir } = setupData;
 
   // Ensure required directories exist in the data folder
   const dirs = ['projects', 'daily', 'inbox'];
@@ -274,20 +316,16 @@ ipcMain.handle('complete-setup', async (event, setupData) => {
     }
   }
 
-  // Save config
-  config.set({
-    dataDir,
-    llmApiKey: llmApiKey || null,
-    llmProvider: llmProvider || null,
-    llmModel: llmModel || null
-  });
+  // Save config (no LLM keys — managed via auth proxy)
+  config.set({ dataDir });
 
-  // Close setup window and start the main app
+  // Close setup window and show login
   if (setupWindow) {
     setupWindow.close();
   }
 
-  await startApp();
+  // After setup, user needs to sign in
+  showLoginWindow();
   return true;
 });
 
@@ -300,16 +338,9 @@ ipcMain.handle('get-config', () => {
 ipcMain.handle('save-config', async (event, updates) => {
   config.set(updates);
 
-  // If LLM settings changed, update server environment
-  if (updates.llmApiKey !== undefined || updates.llmProvider !== undefined || updates.llmModel !== undefined) {
-    const serverEnv = config.getServerEnv();
-    Object.assign(process.env, serverEnv);
-
-    // Clear keys if removed
-    if (!updates.llmApiKey) delete process.env.LLM_API_KEY;
-    if (!updates.llmProvider) delete process.env.LLM_PROVIDER;
-    if (!updates.llmModel) delete process.env.LLM_MODEL;
-  }
+  // If auth or proxy settings changed, update server environment
+  const serverEnv = config.getServerEnv();
+  Object.assign(process.env, serverEnv);
 
   return true;
 });
@@ -340,6 +371,163 @@ ipcMain.handle('open-data-folder', () => {
 // Get app version
 ipcMain.handle('get-app-version', () => {
   return app.getVersion();
+});
+
+// ─── Auth IPC Handlers ──────────────────────────────────────────
+
+function getProxyUrl() {
+  return config.get('proxyUrl') || DEFAULT_PROXY_URL;
+}
+
+// Login / Sign up — calls Supabase Auth via the backend-compatible REST API
+ipcMain.handle('auth-login', async (event, { email, password, isSignUp }) => {
+  try {
+    const { createClient } = require('@supabase/supabase-js');
+    const supabaseUrl = process.env.SUPABASE_URL || 'SUPABASE_URL_PLACEHOLDER';
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'SUPABASE_ANON_KEY_PLACEHOLDER';
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    let result;
+    if (isSignUp) {
+      result = await supabase.auth.signUp({ email, password });
+    } else {
+      result = await supabase.auth.signInWithPassword({ email, password });
+    }
+
+    if (result.error) {
+      return { error: result.error.message };
+    }
+
+    const session = result.data.session;
+    if (!session) {
+      // Sign up may require email confirmation
+      return { error: 'Check your email to confirm your account, then sign in.' };
+    }
+
+    // Store auth tokens in config
+    config.set({
+      authToken: session.access_token,
+      authRefreshToken: session.refresh_token,
+      userEmail: email,
+      userPlan: 'trial' // Default; will be fetched from backend
+    });
+
+    // Inject token into server env
+    process.env.AUTH_TOKEN = session.access_token;
+
+    // Close login window and start the app
+    if (loginWindow) {
+      loginWindow.close();
+    }
+
+    await startApp();
+    return { success: true };
+
+  } catch (err) {
+    return { error: err.message || 'Login failed' };
+  }
+});
+
+// Logout
+ipcMain.handle('auth-logout', async () => {
+  config.set({
+    authToken: null,
+    authRefreshToken: null,
+    userEmail: null,
+    userPlan: null,
+    trialEndsAt: null
+  });
+
+  delete process.env.AUTH_TOKEN;
+
+  // Close main window and show login
+  if (mainWindow) mainWindow.close();
+  if (server) { server.close(); server = null; }
+
+  showLoginWindow();
+  return true;
+});
+
+// Get auth status from backend
+ipcMain.handle('auth-status', async () => {
+  const authToken = config.get('authToken');
+  if (!authToken) return { loggedIn: false };
+
+  try {
+    const proxyUrl = getProxyUrl();
+    const res = await fetch(`${proxyUrl}/api/auth/status`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    if (!res.ok) return { loggedIn: false, error: 'Failed to fetch status' };
+
+    const data = await res.json();
+    // Update local config with latest plan info
+    config.set({
+      userPlan: data.plan,
+      trialEndsAt: data.trialEndsAt
+    });
+
+    return { loggedIn: true, ...data };
+  } catch (err) {
+    return { loggedIn: true, email: config.get('userEmail'), plan: config.get('userPlan'), offline: true };
+  }
+});
+
+// ─── Billing IPC Handlers ───────────────────────────────────────
+
+// Open Stripe Checkout in the default browser
+ipcMain.handle('billing-checkout', async (event, priceType) => {
+  const authToken = config.get('authToken');
+  if (!authToken) return { error: 'Not signed in' };
+
+  try {
+    const proxyUrl = getProxyUrl();
+    const res = await fetch(`${proxyUrl}/api/billing/checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ priceType })
+    });
+
+    const data = await res.json();
+    if (data.url) {
+      shell.openExternal(data.url);
+      return { success: true };
+    }
+    return { error: data.error || 'Failed to create checkout session' };
+  } catch (err) {
+    return { error: err.message };
+  }
+});
+
+// Open Stripe Customer Portal in the default browser
+ipcMain.handle('billing-portal', async () => {
+  const authToken = config.get('authToken');
+  if (!authToken) return { error: 'Not signed in' };
+
+  try {
+    const proxyUrl = getProxyUrl();
+    const res = await fetch(`${proxyUrl}/api/billing/portal`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+
+    const data = await res.json();
+    if (data.url) {
+      shell.openExternal(data.url);
+      return { success: true };
+    }
+    return { error: data.error || 'Failed to open billing portal' };
+  } catch (err) {
+    return { error: err.message };
+  }
 });
 
 // Expose showSettingsWindow to menu

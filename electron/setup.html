@@ -162,25 +162,6 @@
     <div class="error" id="folder-error">Please choose a folder to continue.</div>
   </div>
 
-  <div class="section-header">AI Features (optional)</div>
-
-  <div class="form-group">
-    <label>AI Provider</label>
-    <select id="llm-provider">
-      <option value="">None — skip for now</option>
-      <option value="openai">OpenAI</option>
-      <option value="anthropic">Anthropic</option>
-      <option value="openrouter">OpenRouter</option>
-    </select>
-    <div class="hint">Powers search and daily briefings. You can add this later in Settings.</div>
-  </div>
-
-  <div class="form-group" id="api-key-group" style="display: none;">
-    <label>API Key</label>
-    <input type="password" id="llm-api-key" placeholder="sk-...">
-    <div class="hint">Your key is stored locally and never sent anywhere except to the provider you chose.</div>
-  </div>
-
   <div class="actions">
     <button class="btn-primary" id="start-btn" disabled>Get Started</button>
   </div>
@@ -191,9 +172,6 @@
     const folderDisplay = document.getElementById('folder-display');
     const pickBtn = document.getElementById('pick-folder-btn');
     const startBtn = document.getElementById('start-btn');
-    const providerSelect = document.getElementById('llm-provider');
-    const apiKeyGroup = document.getElementById('api-key-group');
-    const apiKeyInput = document.getElementById('llm-api-key');
     const folderError = document.getElementById('folder-error');
 
     pickBtn.addEventListener('click', async () => {
@@ -207,10 +185,6 @@
       }
     });
 
-    providerSelect.addEventListener('change', () => {
-      apiKeyGroup.style.display = providerSelect.value ? 'block' : 'none';
-    });
-
     startBtn.addEventListener('click', async () => {
       if (!selectedFolder) {
         folderError.style.display = 'block';
@@ -221,10 +195,7 @@
       startBtn.textContent = 'Setting up...';
 
       await window.todomd.completeSetup({
-        dataDir: selectedFolder,
-        llmProvider: providerSelect.value || null,
-        llmApiKey: apiKeyInput.value.trim() || null,
-        llmModel: null  // Use provider defaults
+        dataDir: selectedFolder
       });
     });
   </script>
