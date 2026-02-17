@@ -390,10 +390,10 @@ section {
   white-space: pre;
 }
 
-.how-code .code-comment { color: #6b7280; }
-.how-code .code-keyword { color: #2dd4a8; }
-.how-code .code-string { color: #fbbf24; }
-.how-code .code-bracket { color: #94a3b8; }
+.how-code .code-comment { color: #569cd6; }
+.how-code .code-keyword { color: #ce9178; }
+.how-code .code-string { color: #cccccc; }
+.how-code .code-bracket { color: #858585; }
 
 /* ===== Features ===== */
 .features-grid {
