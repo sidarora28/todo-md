@@ -13,7 +13,7 @@ class EditorComponent {
 
     this.editor = monaco.editor.create(this.containerEl, {
       value: '',
-      language: 'markdown',
+      language: 'todomd',
       theme: currentTheme === 'dark' ? 'todomd-dark' : 'todomd-light',
       fontSize: 14,
       lineNumbers: 'on',
@@ -56,7 +56,7 @@ class EditorComponent {
   }
 
   setupYAMLAutocomplete() {
-    monaco.languages.registerCompletionItemProvider('markdown', {
+    monaco.languages.registerCompletionItemProvider('todomd', {
       provideCompletionItems: (model, position) => {
         const lineContent = model.getLineContent(position.lineNumber);
         const suggestions = [];
