@@ -557,9 +557,9 @@ section {
 
 .preview-editor .md-heading { color: #569cd6; font-weight: 700; }
 .preview-editor .md-checkbox { color: #858585; }
-.preview-editor .md-task { color: #e5c07b; }
+.preview-editor .md-task { color: #cccccc; }
 .preview-editor .md-checked { color: #858585; text-decoration: line-through; opacity: 0.7; }
-.preview-editor .md-project { color: #2dd4a8; }
+.preview-editor .md-project { color: #ce9178; }
 
 .preview-dashboard {
   background: #252526;
