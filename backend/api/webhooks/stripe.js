@@ -32,12 +32,18 @@ module.exports = async function handler(req, res) {
 
   switch (event.type) {
     // ── Checkout completed (subscription or one-time) ──
+    // For new purchases from the website, there's no supabase_user_id yet —
+    // the /api/auth/create-account endpoint handles account creation + plan
+    // linking after the user sets their password on the success page.
     case 'checkout.session.completed': {
       const session = event.data.object;
       const userId = session.metadata?.supabase_user_id;
       const priceType = session.metadata?.priceType;
 
-      if (!userId) break;
+      if (!userId) {
+        console.log('Checkout completed without user ID — account will be created via success page');
+        break;
+      }
 
       const plan = priceType === 'lifetime' ? 'lifetime' : 'active';
       await supabase
