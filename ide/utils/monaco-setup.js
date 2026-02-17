@@ -6,42 +6,39 @@ async function setupMonaco() {
 
   return new Promise(resolve => {
     require(['vs/editor/editor.main'], () => {
-      // Define custom dark theme matching the ToDo.md brand
+      // Define custom dark theme matching the ToDo.md landing page
+      // Uses Monaco's Monarch token names (NOT TextMate scopes)
       monaco.editor.defineTheme('todomd-dark', {
         base: 'vs-dark',
         inherit: true,
         rules: [
-          // Markdown headings — blue to match landing page preview
-          { token: 'markup.heading', foreground: '569cd6', fontStyle: 'bold' },
-          { token: 'markup.heading.markdown', foreground: '569cd6', fontStyle: 'bold' },
-          { token: 'entity.name.section.markdown', foreground: '569cd6', fontStyle: 'bold' },
+          // keyword = headings (#, ##) and list markers (-, *) — blue like landing page
+          { token: 'keyword', foreground: '569cd6', fontStyle: 'bold' },
+          // Links and parenthetical text (project names) — muted gray
+          { token: 'string.link', foreground: '858585' },
+          // Inline code — teal
+          { token: 'variable', foreground: '4ec9b0' },
+          // Code block content
+          { token: 'variable.source', foreground: 'cccccc' },
           // Bold
-          { token: 'markup.bold', foreground: 'cccccc', fontStyle: 'bold' },
-          { token: 'markup.bold.markdown', foreground: 'cccccc', fontStyle: 'bold' },
+          { token: 'strong', foreground: 'cccccc', fontStyle: 'bold' },
           // Italic
-          { token: 'markup.italic', foreground: 'cccccc', fontStyle: 'italic' },
-          { token: 'markup.italic.markdown', foreground: 'cccccc', fontStyle: 'italic' },
-          // Links
-          { token: 'markup.underline.link', foreground: '2dd4a8' },
-          { token: 'markup.underline.link.markdown', foreground: '2dd4a8' },
-          // Lists — teal accent
-          { token: 'markup.list', foreground: '2dd4a8' },
-          { token: 'markup.list.markdown', foreground: '2dd4a8' },
-          { token: 'punctuation.definition.list.begin.markdown', foreground: '2dd4a8' },
-          // Code / inline code
-          { token: 'markup.inline.raw', foreground: 'ce9178' },
-          { token: 'markup.fenced_code.block.markdown', foreground: 'ce9178' },
+          { token: 'emphasis', foreground: 'cccccc', fontStyle: 'italic' },
           // Blockquotes
-          { token: 'markup.quote', foreground: '858585' },
-          { token: 'markup.quote.markdown', foreground: '858585' },
-          // General text
-          { token: '', foreground: 'cccccc' },
-          // Comments (YAML frontmatter, etc.)
-          { token: 'comment', foreground: '6b7280' },
-          // Strings (YAML values, etc.)
+          { token: 'comment', foreground: '858585' },
+          // Horizontal rules
+          { token: 'meta.separator', foreground: '3e3e42' },
+          // Code block delimiters & strings
           { token: 'string', foreground: '4ec9b0' },
-          // Keywords
-          { token: 'keyword', foreground: '2dd4a8' },
+          // HTML elements
+          { token: 'tag', foreground: '569cd6' },
+          { token: 'attribute.name.html', foreground: '2dd4a8' },
+          { token: 'string.html', foreground: '4ec9b0' },
+          // Escape sequences
+          { token: 'escape', foreground: '2dd4a8' },
+          { token: 'string.escape', foreground: '2dd4a8' },
+          // Default text
+          { token: '', foreground: 'cccccc' },
         ],
         colors: {
           'editor.background': '#1e1e1e',
@@ -57,26 +54,26 @@ async function setupMonaco() {
         }
       });
 
-      // Define custom light theme matching the ToDo.md brand
+      // Define custom light theme
       monaco.editor.defineTheme('todomd-light', {
         base: 'vs',
         inherit: true,
         rules: [
-          { token: 'markup.heading', foreground: '0078d4', fontStyle: 'bold' },
-          { token: 'markup.heading.markdown', foreground: '0078d4', fontStyle: 'bold' },
-          { token: 'entity.name.section.markdown', foreground: '0078d4', fontStyle: 'bold' },
-          { token: 'markup.bold', foreground: '3b3b3b', fontStyle: 'bold' },
-          { token: 'markup.italic', foreground: '3b3b3b', fontStyle: 'italic' },
-          { token: 'markup.underline.link', foreground: '1fb993' },
-          { token: 'markup.underline.link.markdown', foreground: '1fb993' },
-          { token: 'markup.list', foreground: '1fb993' },
-          { token: 'punctuation.definition.list.begin.markdown', foreground: '1fb993' },
-          { token: 'markup.inline.raw', foreground: 'ca6f1e' },
-          { token: 'markup.quote', foreground: '6f6f6f' },
-          { token: '', foreground: '3b3b3b' },
-          { token: 'comment', foreground: '6b7280' },
+          { token: 'keyword', foreground: '0078d4', fontStyle: 'bold' },
+          { token: 'string.link', foreground: '6f6f6f' },
+          { token: 'variable', foreground: '16a085' },
+          { token: 'variable.source', foreground: '3b3b3b' },
+          { token: 'strong', foreground: '3b3b3b', fontStyle: 'bold' },
+          { token: 'emphasis', foreground: '3b3b3b', fontStyle: 'italic' },
+          { token: 'comment', foreground: '6f6f6f' },
+          { token: 'meta.separator', foreground: 'e5e5e5' },
           { token: 'string', foreground: '16a085' },
-          { token: 'keyword', foreground: '1fb993' },
+          { token: 'tag', foreground: '0078d4' },
+          { token: 'attribute.name.html', foreground: '1fb993' },
+          { token: 'string.html', foreground: '16a085' },
+          { token: 'escape', foreground: '1fb993' },
+          { token: 'string.escape', foreground: '1fb993' },
+          { token: '', foreground: '3b3b3b' },
         ],
         colors: {
           'editor.background': '#ffffff',
