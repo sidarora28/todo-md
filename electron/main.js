@@ -36,10 +36,12 @@ app.whenReady().then(async () => {
   // Initialize config system with Electron's per-user data path
   config.init(app.getPath('userData'));
 
+  const isDev = process.env.NODE_ENV === 'development';
+
   if (config.needsSetup()) {
     showSetupWindow();
-  } else if (!config.get('authToken')) {
-    // No auth token — show login window
+  } else if (!isDev && !config.get('authToken')) {
+    // No auth token — show login window (skipped in dev mode)
     showLoginWindow();
   } else {
     await startApp();
@@ -54,9 +56,10 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
+    const isDev = process.env.NODE_ENV === 'development';
     if (config.needsSetup()) {
       showSetupWindow();
-    } else if (!config.get('authToken')) {
+    } else if (!isDev && !config.get('authToken')) {
       showLoginWindow();
     } else {
       startApp();
