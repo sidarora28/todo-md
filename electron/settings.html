@@ -9,8 +9,8 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #1e1e2e;
-      color: #cdd6f4;
+      background: #1e1e1e;
+      color: #cccccc;
       padding: 32px;
       user-select: none;
     }
@@ -25,7 +25,7 @@
     .section {
       margin-bottom: 28px;
       padding-bottom: 20px;
-      border-bottom: 1px solid #313244;
+      border-bottom: 1px solid #3e3e42;
     }
     .section:last-child { border-bottom: none; }
 
@@ -34,7 +34,7 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #a6adc8;
+      color: #858585;
       margin-bottom: 14px;
     }
 
@@ -47,12 +47,12 @@
       font-size: 13px;
       font-weight: 500;
       margin-bottom: 6px;
-      color: #bac2de;
+      color: #cccccc;
     }
 
     .hint {
       font-size: 12px;
-      color: #7f849c;
+      color: #6b7280;
       margin-top: 4px;
     }
 
@@ -65,10 +65,10 @@
     .folder-path {
       flex: 1;
       padding: 10px 12px;
-      background: #313244;
-      border: 1px solid #45475a;
+      background: #2d2d30;
+      border: 1px solid #3e3e42;
       border-radius: 6px;
-      color: #cdd6f4;
+      color: #cccccc;
       font-size: 12px;
       font-family: 'JetBrains Mono', monospace;
       word-break: break-all;
@@ -77,17 +77,17 @@
     input[type="text"], input[type="password"], input[type="number"], select {
       width: 100%;
       padding: 10px 12px;
-      background: #313244;
-      border: 1px solid #45475a;
+      background: #2d2d30;
+      border: 1px solid #3e3e42;
       border-radius: 6px;
-      color: #cdd6f4;
+      color: #cccccc;
       font-size: 13px;
       outline: none;
       transition: border-color 0.15s;
     }
 
     input:focus, select:focus {
-      border-color: #89b4fa;
+      border-color: #2dd4a8;
     }
 
     .row {
@@ -107,10 +107,10 @@
     }
 
     .btn-secondary {
-      background: #45475a;
-      color: #cdd6f4;
+      background: #3e3e42;
+      color: #cccccc;
     }
-    .btn-secondary:hover { background: #585b70; }
+    .btn-secondary:hover { background: #4e4e4e; }
 
     .btn-small {
       padding: 8px 12px;
@@ -118,11 +118,11 @@
     }
 
     .btn-primary {
-      background: #89b4fa;
-      color: #1e1e2e;
+      background: #2dd4a8;
+      color: #1e1e1e;
       font-weight: 600;
     }
-    .btn-primary:hover { background: #74c7ec; }
+    .btn-primary:hover { background: #25b892; }
 
     .actions {
       margin-top: 24px;
@@ -133,11 +133,11 @@
 
     .version {
       font-size: 12px;
-      color: #585b70;
+      color: #4e4e4e;
     }
 
     .saved-msg {
-      color: #a6e3a1;
+      color: #4ec9b0;
       font-size: 13px;
       opacity: 0;
       transition: opacity 0.3s;
@@ -153,19 +153,19 @@
 
     .toggle-label {
       font-size: 13px;
-      color: #cdd6f4;
+      color: #cccccc;
     }
 
     .toggle {
       width: 44px;
       height: 24px;
-      background: #45475a;
+      background: #3e3e42;
       border-radius: 12px;
       position: relative;
       cursor: pointer;
       transition: background 0.2s;
     }
-    .toggle.on { background: #89b4fa; }
+    .toggle.on { background: #2dd4a8; }
     .toggle::after {
       content: '';
       width: 18px;
@@ -206,13 +206,13 @@
     <div class="form-group">
       <label>Plan</label>
       <div style="display: flex; gap: 12px; align-items: center;">
-        <span id="plan-badge" style="display:inline-block; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600; background:#45475a; color:#cdd6f4;">—</span>
-        <span id="plan-detail" style="font-size:12px; color:#7f849c;"></span>
+        <span id="plan-badge" style="display:inline-block; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600; background:#3e3e42; color:#cccccc;">—</span>
+        <span id="plan-detail" style="font-size:12px; color:#6b7280;"></span>
       </div>
     </div>
     <div class="form-group" id="usage-group">
       <label>AI Usage Today</label>
-      <div style="font-size:13px; color:#cdd6f4;">
+      <div style="font-size:13px; color:#cccccc;">
         <span id="usage-count">0</span> / <span id="usage-limit">0</span> requests
       </div>
     </div>
@@ -305,14 +305,14 @@
 
       // Style the badge by plan
       if (plan === 'active' || plan === 'lifetime') {
-        badge.style.background = '#a6e3a1';
-        badge.style.color = '#1e1e2e';
+        badge.style.background = '#4ec9b0';
+        badge.style.color = '#1e1e1e';
       } else if (plan === 'expired') {
-        badge.style.background = '#f38ba8';
-        badge.style.color = '#1e1e2e';
+        badge.style.background = '#f48771';
+        badge.style.color = '#1e1e1e';
       } else {
-        badge.style.background = '#89b4fa';
-        badge.style.color = '#1e1e2e';
+        badge.style.background = '#2dd4a8';
+        badge.style.color = '#1e1e1e';
       }
 
       // Plan detail text
