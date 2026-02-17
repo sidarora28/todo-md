@@ -518,12 +518,12 @@ section {
 }
 
 .preview-file.active {
-  background: #2d3d37;
-  border-left: 2px solid #2dd4a8;
+  background: #37373d;
+  border-left: 2px solid #569cd6;
 }
 
 .preview-file-icon {
-  color: #2dd4a8;
+  color: #cccccc;
   font-size: 0.7rem;
 }
 
