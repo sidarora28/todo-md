@@ -14,7 +14,7 @@ class EditorComponent {
     this.editor = monaco.editor.create(this.containerEl, {
       value: '',
       language: 'markdown',
-      theme: currentTheme === 'dark' ? 'vs-dark' : 'vs',
+      theme: currentTheme === 'dark' ? 'todomd-dark' : 'todomd-light',
       fontSize: 14,
       lineNumbers: 'on',
       minimap: { enabled: false },
