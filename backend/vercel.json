@@ -6,6 +6,8 @@
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/signup", "dest": "/public/signup.html" },
+    { "src": "/download", "dest": "/public/download.html" },
     { "src": "/success", "dest": "/public/success.html" },
     { "src": "/cancel", "dest": "/public/cancel.html" },
     { "src": "/css/(.*)", "dest": "/public/css/$1" },

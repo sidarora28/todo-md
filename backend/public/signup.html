@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payment Successful — ToDo.md</title>
+  <title>Create Account — ToDo.md</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
 
@@ -18,24 +18,17 @@
   </nav>
 
   <div class="page-centered" style="padding-top: 80px;">
-    <!-- Loading state -->
-    <div class="card" id="loadingCard">
-      <h1>Verifying payment...</h1>
-      <p>Hang tight, we're confirming your purchase.</p>
-      <div class="spinner"></div>
-    </div>
-
-    <!-- Account creation form -->
-    <div class="card hidden" id="formCard">
-      <h1>Payment successful!</h1>
-      <p>Create a password to set up your account. You'll use this to log in to the app.</p>
+    <!-- Signup form -->
+    <div class="card" id="formCard">
+      <h1>Start your free trial</h1>
+      <p>14 days free — no credit card required. Create an account to get started.</p>
 
       <div id="alertBox" class="hidden"></div>
 
-      <form id="createAccountForm">
+      <form id="signupForm">
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" id="email" readonly>
+          <input type="email" id="email" placeholder="you@example.com" required>
         </div>
         <div class="form-group">
           <label for="password">Password</label>
@@ -47,6 +40,10 @@
         </div>
         <button type="submit" class="btn btn-primary btn-full" id="submitBtn">Create Account</button>
       </form>
+
+      <p style="text-align: center; margin-top: 1.25rem; margin-bottom: 0; font-size: 0.9rem; color: var(--text-secondary);">
+        Already have an account? <a href="/download" style="color: var(--accent);">Download the app</a> and sign in.
+      </p>
     </div>
 
     <!-- Success state -->
@@ -55,18 +52,11 @@
         <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#2dd4a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       </div>
       <h1>You're all set!</h1>
-      <p id="successMessage">Your account has been created. Download the app and log in with your email.</p>
+      <p id="successMessage">Your account has been created. Download the app and sign in with your email.</p>
       <a href="/download" class="btn btn-primary btn-full" style="margin-top: 0.5rem;">Download ToDo.md &rarr;</a>
-    </div>
-
-    <!-- Error state (no session) -->
-    <div class="card hidden" id="errorCard" style="text-align: center;">
-      <h1>Something went wrong</h1>
-      <p id="errorMessage">We couldn't verify your payment. If you were charged, please contact support.</p>
-      <a href="/" class="btn btn-outline btn-full" style="margin-top: 0.5rem;">Back to Home</a>
     </div>
   </div>
 
-  <script src="js/success.js"></script>
+  <script src="js/signup.js"></script>
 </body>
 </html>
