@@ -390,10 +390,12 @@ section {
   white-space: pre;
 }
 
-.how-code .code-comment { color: #569cd6; }
+.how-code .code-comment { color: #569cd6; font-weight: 700; }
 .how-code .code-keyword { color: #ce9178; }
-.how-code .code-string { color: #cccccc; }
-.how-code .code-bracket { color: #858585; }
+.how-code .code-string { color: #dcdcaa; }
+.how-code .code-bracket { color: #dcdcaa; }
+.how-code .code-project { color: #4ec9b0; }
+.how-code .code-date { color: #d4d4d4; }
 
 /* ===== Features ===== */
 .features-grid {
@@ -556,10 +558,13 @@ section {
 }
 
 .preview-editor .md-heading { color: #569cd6; font-weight: 700; }
-.preview-editor .md-checkbox { color: #858585; }
-.preview-editor .md-task { color: #cccccc; }
-.preview-editor .md-checked { color: #858585; text-decoration: line-through; opacity: 0.7; }
-.preview-editor .md-project { color: #ce9178; }
+.preview-editor .md-checkbox { color: #dcdcaa; }
+.preview-editor .md-task { color: #dcdcaa; }
+.preview-editor .md-checked { color: #858585; text-decoration: line-through; }
+.preview-editor .md-project { color: #4ec9b0; }
+.preview-editor .md-pipe { color: #ce9178; }
+.preview-editor .md-date { color: #d4d4d4; }
+.preview-editor .md-paren { color: #ce9178; }
 
 .preview-dashboard {
   background: #252526;
