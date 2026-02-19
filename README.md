@@ -4,7 +4,9 @@
 
 **Your tasks, your machine, plain markdown.**
 
-A personal task management system that runs locally. No cloud, no database, no account. Just `.md` files you own forever.
+A desktop task manager built around plain `.md` files. Everything lives on your hard drive — your data never leaves your machine.
+
+[![Download](https://img.shields.io/badge/Download-macOS%20%7C%20Windows-2dd4a8?style=for-the-badge)](https://github.com/sidarora28/todo-md/releases/latest)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node 18+](https://img.shields.io/badge/node-18%2B-green.svg)](https://nodejs.org)
@@ -13,17 +15,30 @@ A personal task management system that runs locally. No cloud, no database, no a
 <!-- TODO: Add hero screenshot/GIF here -->
 <!-- ![ToDo.md IDE](docs/images/ide-screenshot.png) -->
 
+[Website](https://todomd.app) · [Download](https://github.com/sidarora28/todo-md/releases/latest) · [Documentation](HOWTOUSE.md)
+
 </div>
+
+---
+
+## Download
+
+| Platform | Download |
+|----------|----------|
+| **macOS** (Intel & Apple Silicon) | [Download .dmg](https://github.com/sidarora28/todo-md/releases/latest) |
+| **Windows** (10+) | [Download .exe](https://github.com/sidarora28/todo-md/releases/latest) |
+
+**Free 14-day trial.** Create an account in the app — no credit card required. After the trial, [choose a plan](https://todomd.app/#pricing) to continue using AI features.
 
 ---
 
 ## What ToDo.md Does
 
-ToDo.md is a personal task management system that runs on your computer. You get a browser-based editor (looks and feels like VS Code) where you manage tasks, projects, and ideas -- all stored as plain markdown files on your hard drive.
+ToDo.md is a desktop task manager with a built-in editor that looks and feels like VS Code. You manage tasks, projects, and ideas — all stored as plain markdown files on your hard drive.
 
-There's no sign-up, no subscription, no data leaving your machine. If you can open a text file, you can read your data. If you stop using the app, your files are still right there.
+Your data stays local. If you stop using the app, your files are still right there.
 
-Optional AI features (search, daily briefings, auto-sorting) are available if you bring your own API key, but everything works great without them.
+AI features (search, daily briefings, auto-sorting) are included in your subscription and work out of the box. Everything also works without AI — you get keyword search, static daily summaries with motivational quotes, and manual project assignment.
 
 ## Your Daily To-Do List (the main event)
 
@@ -94,13 +109,13 @@ The IDE includes a built-in dashboard panel that gives you a bird's-eye view of 
 - **Project progress** -- See all your projects and their tasks at a glance
 - **Task counts** -- How many tasks are overdue, due today, and due this week
 - **Morning briefing** -- An AI-written personalized narrative about your day with highlights and a motivational quote (the tone rotates daily: encouraging, direct, reflective, energetic, calm)
-- **Motivational quotes** -- If you don't have an AI key, you still get a curated quote from a collection of 100 (Stoic philosophy, modern wisdom, and everything in between)
+- **Motivational quotes** -- If you don't have AI enabled, you still get a curated quote from a collection of 100 (Stoic philosophy, modern wisdom, and everything in between)
 
 The dashboard auto-refreshes every 30 seconds.
 
-## AI Features (Optional)
+## AI Features
 
-AI features are powered by your own API key. Three providers are supported: **OpenAI** (GPT-4o), **Anthropic** (Claude), and **OpenRouter** (any model). You pick one.
+AI features are included with your subscription and work without any setup. Three providers power the backend: **OpenAI**, **Anthropic** (Claude), and **OpenRouter**.
 
 Here's what AI adds:
 
@@ -110,61 +125,34 @@ Here's what AI adds:
 
 - **Daily Briefings** -- Instead of just a list of tasks, you get a personalized morning summary with context about your workload, specific task and project mentions, and actionable highlights.
 
-**Everything works without AI.** You get keyword search with relevance scoring, static daily summaries with motivational quotes, and manual project assignment. No features are locked behind an API key.
+**Everything works without AI.** You get keyword search with relevance scoring, static daily summaries with motivational quotes, and manual project assignment. No features are locked behind AI.
 
-## Getting Started
+---
 
-### What you need
+## Run From Source (for developers)
 
-- **Node.js 18+** — [Download from nodejs.org](https://nodejs.org) (click the big green button, run the installer)
-- **Git** — [Download from git-scm.com](https://git-scm.com) (optional — see "Download ZIP" below)
-
-Already have both? Skip to [Quick Start](#quick-start).
-
-<details>
-<summary><strong>New to the terminal?</strong> Click here for a quick primer.</summary>
-
-A terminal is a text-based app where you type commands. You'll only need it for the initial setup — after that, everything happens in your browser.
-
-**How to open it:**
-- **Mac** — Press `Cmd + Space`, type "Terminal", hit Enter
-- **Windows** — Press the Windows key, type "Command Prompt" or "PowerShell", hit Enter
-- **Linux** — Press `Ctrl + Alt + T`
-
-You'll see a blinking cursor. That's where you paste the commands below.
-
-**Don't want to use Git?** Click the green **"Code"** button at the top of this GitHub page, then **"Download ZIP"**. Unzip the folder, then open your terminal, type `cd ` (with a space after it), drag the unzipped folder into the terminal window, and press Enter. Then continue from step 3 below.
-
-</details>
-
-### Quick Start
+If you prefer running from source instead of using the desktop app:
 
 ```bash
 git clone https://github.com/sidarora28/todo-md.git
 cd todo-md
-npm run setup
-```
-
-The setup wizard handles everything: installing dependencies, picking an AI provider (optional), creating your first projects, and adding tasks. It takes about 5 minutes.
-
-New to ToDo.md? Read the **[complete guide](HOWTOUSE.md)** for a full walkthrough, syntax reference, and FAQ.
-
-### For experienced developers
-
-If you'd rather skip the wizard:
-
-```bash
 npm install && npm start
 ```
 
-Then open **http://localhost:3000**. AI config goes in `.env` — see [.env.example](.env.example) for options. Provider is auto-detected from key prefix (`sk-` → OpenAI, `sk-ant-` → Anthropic, `sk-or-v1-` → OpenRouter), or set `LLM_PROVIDER` explicitly.
+Open **http://localhost:3000**. To use your own AI provider, configure `.env` — see [.env.example](.env.example) for options. Provider is auto-detected from key prefix (`sk-` → OpenAI, `sk-ant-` → Anthropic, `sk-or-v1-` → OpenRouter), or set `LLM_PROVIDER` explicitly.
 
----
+To run the Electron desktop app in dev mode:
+
+```bash
+npm run electron:dev
+```
 
 ## For Developers
 
-- **Server** -- Single Node.js file (`server.js`, Express), no build step, no framework, no database
+- **Server** -- Single Node.js file (`server.js`, Express), no build step, no framework
 - **Frontend** -- Vanilla JS with ES modules, Monaco editor (the same editor engine as VS Code)
+- **Desktop** -- Electron wrapper (`electron/`) with native menus, auto-updates, and OS config storage
+- **Backend** -- Vercel-hosted API (`backend/`) for auth, billing, and managed AI proxy
 - **Data** -- Plain `.md` files on disk. That's it.
 - **API** -- REST endpoints for file CRUD, task syncing, dashboard data, and AI search
 
