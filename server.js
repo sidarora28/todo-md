@@ -291,7 +291,7 @@ function findTaskInFile(filePath, taskTitle) {
         break;
       }
       const title = line.replace('### ', '').trim();
-      if (title === taskTitle) {
+      if (title.toLowerCase() === taskTitle.toLowerCase()) {
         inTask = true;
         taskStart = i;
         taskLines.push(line);
@@ -415,6 +415,26 @@ function generateDailyFile(date) {
   return dailyFilePath;
 }
 
+// Helper function to update a task's due date in a monthly file
+function updateTaskDueDate(title, projectKey, newDate) {
+  const monthlyFilePath = getMonthlyFilePath(projectKey);
+  const taskInfo = findTaskInFile(monthlyFilePath, title);
+  if (!taskInfo) return;
+
+  const { allLines, taskStart, taskEnd } = taskInfo;
+
+  for (let i = taskStart; i <= taskEnd; i++) {
+    if (allLines[i].startsWith('due:')) {
+      const currentDue = allLines[i].replace('due:', '').trim();
+      if (currentDue < newDate) {
+        allLines[i] = `due: ${newDate}`;
+        fs.writeFileSync(monthlyFilePath, allLines.join('\n'));
+      }
+      break;
+    }
+  }
+}
+
 // Helper function to add a task block to a project's monthly file
 function addTaskToMonthlyFile(title, projectKey, date) {
   const monthlyFilePath = getMonthlyFilePath(projectKey);
@@ -477,24 +497,34 @@ async function syncNewTasksFromDaily(dailyContent, date) {
   const lines = dailyContent.split('\n');
   const tasksWithProject = [];
   const tasksWithoutProject = [];
+  let currentSection = '';
 
-  // Match: - [ ] or - [] with optional (project-key)
+  // Match: - [ ] or - [] with optional (project-key), tracking which section they're in
   lines.forEach(line => {
+    if (line.startsWith('## ')) {
+      currentSection = line.replace('## ', '').trim().toLowerCase();
+      return;
+    }
     const match = line.match(/^-\s+\[[ ]?\]\s+(.+?)(?:\s+\(([^)]+)\))?\s*$/);
     if (match) {
       const title = match[1].trim();
       const projectKey = match[2] ? match[2].trim() : null;
+      const inTodaySection = currentSection === 'today';
       if (projectKey) {
-        tasksWithProject.push({ title, projectKey });
+        tasksWithProject.push({ title, projectKey, inTodaySection });
       } else {
-        tasksWithoutProject.push({ title });
+        tasksWithoutProject.push({ title, inTodaySection });
       }
     }
   });
 
   // Sync tasks that already have a project
-  tasksWithProject.forEach(({ title, projectKey }) => {
-    addTaskToMonthlyFile(title, projectKey, date);
+  tasksWithProject.forEach(({ title, projectKey, inTodaySection }) => {
+    const added = addTaskToMonthlyFile(title, projectKey, date);
+    // If task already existed and user moved it to Today, update the due date
+    if (!added && inTodaySection) {
+      updateTaskDueDate(title, projectKey, date);
+    }
   });
 
   // For tasks without a project, use LLM inference

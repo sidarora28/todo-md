@@ -50,16 +50,16 @@ async function setupMonaco() {
             [/^\s*[-*_]{3,}\s*$/, 'separator'],
 
             // ── Task lines with checkboxes ───────────────────────────
-            // Unchecked + project tag at end:  - [ ] text (project)
-            [/^(\s*[-*+]\s+)(\[ \])(\s+)(.*?)(\s+\([^)]+\))\s*$/,
+            // Unchecked + project tag at end:  - [ ] text (project) or - [] text (project)
+            [/^(\s*[-*+]\s+)(\[[ ]?\])(\s+)(.*?)(\s+\([^)]+\))\s*$/,
               ['list.marker', 'checkbox', 'white', 'task.text', 'project.tag']],
 
             // Checked + project tag:  - [x] text (project)
             [/^(\s*[-*+]\s+)(\[[xX]\])(\s+)(.*?)(\s+\([^)]+\))\s*$/,
               ['list.marker', 'checkbox.checked', 'white', 'task.text.checked', 'project.tag']],
 
-            // Unchecked, no project tag:  - [ ] text
-            [/^(\s*[-*+]\s+)(\[ \])(\s+)(.*)$/,
+            // Unchecked, no project tag:  - [ ] text or - [] text
+            [/^(\s*[-*+]\s+)(\[[ ]?\])(\s+)(.*)$/,
               ['list.marker', 'checkbox', 'white', 'task.text']],
 
             // Checked, no project tag:  - [x] text
