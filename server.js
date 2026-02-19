@@ -415,20 +415,33 @@ function generateDailyFile(date) {
   return dailyFilePath;
 }
 
+// Helper function to find a task across ALL monthly files for a project
+function findTaskInProject(projectKey, taskTitle) {
+  const tasksDir = path.join(DATA_DIR, 'projects', projectKey, 'tasks');
+  if (!fs.existsSync(tasksDir)) return null;
+
+  const taskFiles = fs.readdirSync(tasksDir).filter(f => f.endsWith('.md'));
+  for (const file of taskFiles) {
+    const filePath = path.join(tasksDir, file);
+    const result = findTaskInFile(filePath, taskTitle);
+    if (result) return { ...result, filePath };
+  }
+  return null;
+}
+
 // Helper function to update a task's due date in a monthly file
 function updateTaskDueDate(title, projectKey, newDate) {
-  const monthlyFilePath = getMonthlyFilePath(projectKey);
-  const taskInfo = findTaskInFile(monthlyFilePath, title);
-  if (!taskInfo) return;
+  const result = findTaskInProject(projectKey, title);
+  if (!result) return;
 
-  const { allLines, taskStart, taskEnd } = taskInfo;
+  const { allLines, taskStart, taskEnd, filePath } = result;
 
   for (let i = taskStart; i <= taskEnd; i++) {
     if (allLines[i].startsWith('due:')) {
       const currentDue = allLines[i].replace('due:', '').trim();
       if (currentDue < newDate) {
         allLines[i] = `due: ${newDate}`;
-        fs.writeFileSync(monthlyFilePath, allLines.join('\n'));
+        fs.writeFileSync(filePath, allLines.join('\n'));
       }
       break;
     }
@@ -453,8 +466,8 @@ function addTaskToMonthlyFile(title, projectKey, date) {
     fs.writeFileSync(monthlyFilePath, header, 'utf8');
   }
 
-  // Check if task already exists in monthly file
-  const existing = findTaskInFile(monthlyFilePath, title);
+  // Check if task already exists in ANY monthly file for this project
+  const existing = findTaskInProject(projectKey, title);
   if (existing) return false; // Already exists, skip
 
   // Add task to Active Tasks section
@@ -568,15 +581,12 @@ function syncTodayToMonthly(dailyContent, date) {
     }
   });
 
-  // Mark each task as done in its monthly file
+  // Mark each task as done in its monthly file (search ALL months, not just current)
   checkedTasks.forEach(({ title, projectKey }) => {
-    const monthlyFilePath = getMonthlyFilePath(projectKey);
-    if (!fs.existsSync(monthlyFilePath)) return;
-
-    const taskInfo = findTaskInFile(monthlyFilePath, title);
+    const taskInfo = findTaskInProject(projectKey, title);
     if (!taskInfo) return;
 
-    const { allLines, taskStart, taskEnd } = taskInfo;
+    const { allLines, taskStart, taskEnd, filePath: monthlyFilePath } = taskInfo;
 
     // Extract task block
     const taskBlock = allLines.slice(taskStart, taskEnd + 1);
