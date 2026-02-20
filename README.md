@@ -47,7 +47,7 @@ Every day, the system reads all your projects, finds every task that is due toda
 - Check off a task here → it automatically updates the project files
 - Add a new task → it maps it to the relevant project
 
-![Daily file with overdue and today tasks](docs/screenshots/daily-file.png)
+![Daily file with overdue and today tasks](https://github.com/user-attachments/assets/bbf930a7-b14c-423c-9168-cbb81f55082e)
 
 ---
 
@@ -57,7 +57,7 @@ If a task isn't due today, add it here. The system uses the syntax to map it to 
 
 Once processed (tied to a project), the task gets a strikethrough so you know it's been filed. If you don't mention a project, an LLM figures out the best match — or it goes to a fallback project like "others".
 
-![Tasks file for recording tasks with future due dates](docs/screenshots/tasks-file.png)
+![Tasks file for recording tasks with future due dates](https://github.com/user-attachments/assets/5edeb51f-bed6-44dd-a019-268867e7b0f1)
 
 ---
 
@@ -67,7 +67,7 @@ Not everything is a task yet. Ideas, vague thoughts, half-formed plans, links �
 
 Date headers are inserted automatically and older entries auto-archive to keep things clean.
 
-![Inbox for open-ended ideas without due dates](docs/screenshots/inbox.png)
+![Inbox for open-ended ideas without due dates](https://github.com/user-attachments/assets/703cfa32-a47d-4497-a830-91a94f32aff0)
 
 ---
 
@@ -77,11 +77,11 @@ Every task is tied to a project (a larger goal). Each project folder has at leas
 
 **Project meta** — goals, milestones, notes. You set this up once and rarely go back. But it provides good context to the LLM for smarter task sorting and search.
 
-![Project meta file with goals and milestones](docs/screenshots/project-meta.png)
+![Project meta file with goals and milestones](https://github.com/user-attachments/assets/6c2a2738-cbbf-4af8-a21e-9c4866ee39b1)
 
 **Project tasks** — all tasks for the project, organized by calendar month. Active tasks at the top, completed at the bottom.
 
-![Monthly task file under a project](docs/screenshots/project-tasks.png)
+![Monthly task file under a project](https://github.com/user-attachments/assets/8a9ba09c-6fc9-479f-9235-ae4a9cef93ab)
 
 ---
 
@@ -89,7 +89,7 @@ Every task is tied to a project (a larger goal). Each project folder has at leas
 
 Keyword search surfaces all relevant files across every project. With an LLM plugged in, you also get semantic search that understands what you're asking and summarises results.
 
-![Search with LLM-powered and keyword-based results](docs/screenshots/search.png)
+![Search with LLM-powered and keyword-based results](https://github.com/user-attachments/assets/c74dbfbb-69b3-4d9e-8490-cbfcbeb083a9)
 
 ---
 
