@@ -24,7 +24,7 @@ let server = null;
 let serverPort = null;
 
 // Backend proxy URL (override via config for dev)
-const DEFAULT_PROXY_URL = 'https://todomd-api.vercel.app';
+const DEFAULT_PROXY_URL = 'https://todo-md-desktop.vercel.app';
 
 // Determine the app root directory (where server.js, ide.html, etc. live)
 // In development: project root. In production: inside the app.asar archive.

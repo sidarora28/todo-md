@@ -57,7 +57,7 @@ function extractJSON(text) {
 // Routes LLM calls through the managed backend proxy.
 // Falls back to direct API calls if a legacy LLM_API_KEY is set.
 
-const PROXY_URL = process.env.PROXY_URL || 'https://todomd-api.vercel.app';
+const PROXY_URL = process.env.PROXY_URL || 'https://todo-md-desktop.vercel.app';
 
 function getLLMConfig() {
   const apiKey = process.env.LLM_API_KEY || process.env.OPENROUTER_API_KEY;
