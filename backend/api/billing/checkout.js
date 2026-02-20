@@ -1,4 +1,5 @@
 const Stripe = require('stripe');
+const { setCors } = require('../../lib/cors');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -9,6 +10,7 @@ const PRICE_MAP = {
 };
 
 module.exports = async function handler(req, res) {
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 

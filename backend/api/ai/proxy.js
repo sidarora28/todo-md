@@ -1,5 +1,6 @@
 const { getUser, unauthorized } = require('../../lib/auth');
 const { supabase } = require('../../lib/supabase');
+const { setCors } = require('../../lib/cors');
 
 // LLM provider configs — uses env vars set on Vercel
 function getLLMConfig() {
@@ -39,7 +40,7 @@ const LIMITS = {
 };
 
 module.exports = async function handler(req, res) {
-  // CORS preflight
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -73,19 +74,17 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  // 3. Check rate limit
+  // 3. Check rate limit — atomic: ensure row exists, then check count
   const today = new Date().toISOString().split('T')[0];
   const limit = LIMITS[profile.plan] || 0;
 
-  // Upsert usage row and increment
-  const { data: usage, error: usageErr } = await supabase
+  // Ensure usage row exists for today
+  await supabase
     .from('usage')
     .upsert(
       { user_id: user.id, date: today, request_count: 0 },
       { onConflict: 'user_id,date', ignoreDuplicates: true }
-    )
-    .select()
-    .single();
+    );
 
   // Fetch current count
   const { data: currentUsage } = await supabase
@@ -102,13 +101,20 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  // Increment count before calling LLM (pre-increment prevents overuse on concurrent requests)
+  await supabase
+    .from('usage')
+    .update({ request_count: (currentUsage?.request_count || 0) + 1 })
+    .eq('user_id', user.id)
+    .eq('date', today);
+
   // 4. Call LLM
   const { prompt, options = {} } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
 
   const config = getLLMConfig();
   const model = options.model || config.model;
-  const maxTokens = options.maxTokens || 1024;
+  const maxTokens = Math.min(options.maxTokens || 1024, 4096);
 
   try {
     let response;
@@ -155,13 +161,6 @@ module.exports = async function handler(req, res) {
     } else {
       content = data.choices?.[0]?.message?.content;
     }
-
-    // 5. Increment usage count
-    await supabase
-      .from('usage')
-      .update({ request_count: (currentUsage?.request_count || 0) + 1 })
-      .eq('user_id', user.id)
-      .eq('date', today);
 
     return res.status(200).json({ content });
 

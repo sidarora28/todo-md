@@ -15,6 +15,17 @@ const { initAutoUpdater, checkForUpdates } = require('./updater');
 // Set the app name (shows in macOS menu bar during development)
 app.name = 'ToDo.md';
 
+// Global error handlers — prevent silent crashes
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+  dialog.showErrorBox('ToDo.md — Unexpected Error',
+    `An unexpected error occurred:\n\n${err.message}\n\nThe app will continue running, but you may want to restart it.`);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
+});
+
 // Keep references so they don't get garbage collected
 let mainWindow = null;
 let setupWindow = null;
@@ -263,10 +274,15 @@ function createMainWindow() {
     mainWindow = null;
   });
 
-  // Open external links in default browser
+  // Open external links in default browser (validate URL to prevent abuse)
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('http')) {
-      shell.openExternal(url);
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        shell.openExternal(url);
+      }
+    } catch {
+      // Invalid URL — ignore
     }
     return { action: 'deny' };
   });
@@ -408,16 +424,13 @@ ipcMain.handle('auth-login', async (event, { email, password, isSignUp }) => {
       return { error: 'Check your email to confirm your account, then sign in.' };
     }
 
-    // Store auth tokens in config
+    // Store auth tokens in config (server reads from config via getServerEnv())
     config.set({
       authToken: session.access_token,
       authRefreshToken: session.refresh_token,
       userEmail: email,
       userPlan: 'trial' // Default; will be fetched from backend
     });
-
-    // Inject token into server env
-    process.env.AUTH_TOKEN = session.access_token;
 
     // Close login window and start the app
     if (loginWindow) {
@@ -441,8 +454,6 @@ ipcMain.handle('auth-logout', async () => {
     userPlan: null,
     trialEndsAt: null
   });
-
-  delete process.env.AUTH_TOKEN;
 
   // Close main window and show login
   if (mainWindow) mainWindow.close();

@@ -46,11 +46,15 @@ module.exports = async function handler(req, res) {
       }
 
       const plan = priceType === 'lifetime' ? 'lifetime' : 'active';
-      await supabase
+      const { error: updateErr } = await supabase
         .from('profiles')
         .update({ plan, stripe_customer_id: session.customer })
         .eq('id', userId);
 
+      if (updateErr) {
+        console.error(`Failed to upgrade user ${userId}:`, updateErr.message);
+        return res.status(500).json({ error: 'Failed to update profile' });
+      }
       console.log(`User ${userId} upgraded to ${plan}`);
       break;
     }
@@ -60,18 +64,28 @@ module.exports = async function handler(req, res) {
       const subscription = event.data.object;
       const customerId = subscription.customer;
 
-      const { data: profile } = await supabase
+      const { data: profile, error: fetchErr } = await supabase
         .from('profiles')
         .select('id, plan')
         .eq('stripe_customer_id', customerId)
         .single();
 
+      if (fetchErr) {
+        console.error(`Failed to find profile for customer ${customerId}:`, fetchErr.message);
+        return res.status(500).json({ error: 'Failed to find profile' });
+      }
+
       // Don't downgrade lifetime users
       if (profile && profile.plan !== 'lifetime') {
-        await supabase
+        const { error: expireErr } = await supabase
           .from('profiles')
           .update({ plan: 'expired' })
           .eq('id', profile.id);
+
+        if (expireErr) {
+          console.error(`Failed to expire user ${profile.id}:`, expireErr.message);
+          return res.status(500).json({ error: 'Failed to expire subscription' });
+        }
         console.log(`User ${profile.id} subscription expired`);
       }
       break;
