@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "backend/api/**/*.js", "use": "@vercel/node" },
+    { "src": "backend/public/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/backend/api/$1" },
+    { "src": "/signup", "dest": "/backend/public/signup.html" },
+    { "src": "/download", "dest": "/backend/public/download.html" },
+    { "src": "/success", "dest": "/backend/public/success.html" },
+    { "src": "/cancel", "dest": "/backend/public/cancel.html" },
+    { "src": "/css/(.*)", "dest": "/backend/public/css/$1" },
+    { "src": "/js/(.*)", "dest": "/backend/public/js/$1" },
+    { "src": "/images/(.*)", "dest": "/backend/public/images/$1" },
+    { "src": "^/$", "dest": "/backend/public/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,Authorization" }
+      ]
+    }
+  ]
+}
