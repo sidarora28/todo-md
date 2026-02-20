@@ -2,6 +2,7 @@ const Stripe = require('stripe');
 const { getUser, unauthorized } = require('../../lib/auth');
 const { supabase } = require('../../lib/supabase');
 const { setCors } = require('../../lib/cors');
+const { checkEnv } = require('../../lib/env');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -9,6 +10,9 @@ module.exports = async function handler(req, res) {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const { ok, missing } = checkEnv('stripe');
+  if (!ok) return res.status(500).json({ error: `Server misconfigured: missing ${missing.join(', ')}` });
 
   const user = await getUser(req);
   if (!user) return unauthorized(res);

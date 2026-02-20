@@ -1,5 +1,6 @@
 const Stripe = require('stripe');
 const { setCors } = require('../../lib/cors');
+const { checkEnv } = require('../../lib/env');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -13,6 +14,9 @@ module.exports = async function handler(req, res) {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const { ok, missing } = checkEnv('stripe');
+  if (!ok) return res.status(500).json({ error: `Server misconfigured: missing ${missing.join(', ')}` });
 
   const { priceType } = req.body;
   if (!priceType || !PRICE_MAP[priceType]) {

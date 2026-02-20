@@ -12,7 +12,8 @@
     "dist": "electron-builder",
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
-    "generate-icons": "node scripts/generate-icons.js"
+    "generate-icons": "node scripts/generate-icons.js",
+    "test": "node --test 'backend/tests/**/*.test.js'"
   },
   "keywords": [
     "task-management",

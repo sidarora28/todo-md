@@ -1,6 +1,9 @@
 const { getUser, unauthorized } = require('../../lib/auth');
 const { supabase } = require('../../lib/supabase');
 const { setCors } = require('../../lib/cors');
+const { log } = require('../../lib/logger');
+const { checkEnv } = require('../../lib/env');
+const { PLAN_LIMITS, MAX_TOKENS_DEFAULT, MAX_TOKENS_HARD_CAP } = require('../../lib/constants');
 
 // LLM provider configs — uses env vars set on Vercel
 function getLLMConfig() {
@@ -32,17 +35,13 @@ function getLLMConfig() {
   return configs[provider] || configs.openai;
 }
 
-// Rate limits per plan
-const LIMITS = {
-  trial: 100,
-  active: 500,
-  lifetime: 500
-};
-
 module.exports = async function handler(req, res) {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const { ok, missing } = checkEnv('llm');
+  if (!ok) return res.status(500).json({ error: `Server misconfigured: missing ${missing.join(', ')}` });
 
   // 1. Authenticate
   const user = await getUser(req);
@@ -76,7 +75,7 @@ module.exports = async function handler(req, res) {
 
   // 3. Check rate limit — atomic: ensure row exists, then check count
   const today = new Date().toISOString().split('T')[0];
-  const limit = LIMITS[profile.plan] || 0;
+  const limit = PLAN_LIMITS[profile.plan] || 0;
 
   // Ensure usage row exists for today
   await supabase
@@ -114,7 +113,7 @@ module.exports = async function handler(req, res) {
 
   const config = getLLMConfig();
   const model = options.model || config.model;
-  const maxTokens = Math.min(options.maxTokens || 1024, 4096);
+  const maxTokens = Math.min(options.maxTokens || MAX_TOKENS_DEFAULT, MAX_TOKENS_HARD_CAP);
 
   try {
     let response;
@@ -150,7 +149,7 @@ module.exports = async function handler(req, res) {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(`${config.provider} API error:`, response.status, errorBody);
+      log.error(`${config.provider} API error: ${response.status}`, errorBody);
       return res.status(502).json({ error: 'llm_error', message: 'AI provider returned an error' });
     }
 
@@ -165,7 +164,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ content });
 
   } catch (err) {
-    console.error('Proxy LLM error:', err.message);
+    log.error('Proxy LLM error:', err.message);
     return res.status(500).json({ error: 'network_error', message: 'Failed to reach AI provider' });
   }
 };

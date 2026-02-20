@@ -1,6 +1,8 @@
 const Stripe = require('stripe');
 const { supabase } = require('../../lib/supabase');
 const { setCors } = require('../../lib/cors');
+const { log } = require('../../lib/logger');
+const { checkEnv } = require('../../lib/env');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -8,6 +10,9 @@ module.exports = async function handler(req, res) {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const { ok, missing } = checkEnv('stripe');
+  if (!ok) return res.status(500).json({ error: `Server misconfigured: missing ${missing.join(', ')}` });
 
   const { sessionId, password } = req.body;
   if (!sessionId || !password) {
@@ -68,10 +73,15 @@ module.exports = async function handler(req, res) {
   }
 
   // 3. Update the profile with plan + Stripe customer ID
-  await supabase
+  const { error: updateErr } = await supabase
     .from('profiles')
     .update({ plan, stripe_customer_id: customerId })
     .eq('id', userId);
+
+  if (updateErr) {
+    log.error(`Failed to update profile for user ${userId}:`, updateErr.message);
+    return res.status(500).json({ error: 'Failed to update account.' });
+  }
 
   return res.status(200).json({
     success: true,

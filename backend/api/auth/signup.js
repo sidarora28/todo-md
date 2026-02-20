@@ -1,5 +1,6 @@
 const { supabase } = require('../../lib/supabase');
 const { setCors } = require('../../lib/cors');
+const { log } = require('../../lib/logger');
 
 module.exports = async function handler(req, res) {
   setCors(req, res);
@@ -37,7 +38,7 @@ module.exports = async function handler(req, res) {
         error: 'An account with this email already exists. Please sign in instead.'
       });
     }
-    console.error('Signup error:', createError.message);
+    log.error('Signup error:', createError.message);
     return res.status(500).json({ error: 'Could not create account. Please try again.' });
   }
 

@@ -1,8 +1,7 @@
 const { getUser, unauthorized } = require('../../lib/auth');
 const { supabase } = require('../../lib/supabase');
 const { setCors } = require('../../lib/cors');
-
-const LIMITS = { trial: 100, active: 500, lifetime: 500 };
+const { PLAN_LIMITS, MS_PER_DAY } = require('../../lib/constants');
 
 module.exports = async function handler(req, res) {
   setCors(req, res);
@@ -38,9 +37,9 @@ module.exports = async function handler(req, res) {
     .eq('date', today)
     .single();
 
-  const limit = LIMITS[plan] || 0;
+  const limit = PLAN_LIMITS[plan] || 0;
   const trialDaysLeft = plan === 'trial'
-    ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at) - new Date()) / 86400000))
+    ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at) - new Date()) / MS_PER_DAY))
     : 0;
 
   return res.status(200).json({

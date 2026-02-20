@@ -1,3 +1,6 @@
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+const DAYS_IN_WEEK = 7;
+
 class DashboardWidget {
   esc(str) {
     if (!str) return '';
@@ -39,7 +42,7 @@ class DashboardWidget {
     const d1 = new Date(date1);
     const d2 = new Date(date2);
     const diffTime = Math.abs(d2 - d1);
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.ceil(diffTime / MS_PER_DAY);
   }
 
   getUrgencyClass(task, currentDate) {
@@ -82,7 +85,7 @@ class DashboardWidget {
     const completedThisWeek = allTasks.filter(t => {
       if (!t.completed) return false;
       const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
+      weekAgo.setDate(weekAgo.getDate() - DAYS_IN_WEEK);
       return new Date(t.completed) >= weekAgo;
     });
 

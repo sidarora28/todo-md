@@ -1,5 +1,7 @@
 const Stripe = require('stripe');
 const { supabase } = require('../../lib/supabase');
+const { log } = require('../../lib/logger');
+const { checkEnv } = require('../../lib/env');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -19,6 +21,9 @@ function getRawBody(req) {
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
+  const { ok, missing } = checkEnv('stripeWebhook');
+  if (!ok) return res.status(500).json({ error: `Server misconfigured: missing ${missing.join(', ')}` });
+
   const rawBody = await getRawBody(req);
   const sig = req.headers['stripe-signature'];
 
@@ -26,7 +31,7 @@ module.exports = async function handler(req, res) {
   try {
     event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
+    log.error('Webhook signature verification failed:', err.message);
     return res.status(400).json({ error: 'Invalid signature' });
   }
 
@@ -41,7 +46,7 @@ module.exports = async function handler(req, res) {
       const priceType = session.metadata?.priceType;
 
       if (!userId) {
-        console.log('Checkout completed without user ID — account will be created via success page');
+        log.info('Checkout completed without user ID — account will be created via success page');
         break;
       }
 
@@ -52,10 +57,10 @@ module.exports = async function handler(req, res) {
         .eq('id', userId);
 
       if (updateErr) {
-        console.error(`Failed to upgrade user ${userId}:`, updateErr.message);
+        log.error(`Failed to upgrade user ${userId}:`, updateErr.message);
         return res.status(500).json({ error: 'Failed to update profile' });
       }
-      console.log(`User ${userId} upgraded to ${plan}`);
+      log.info(`User ${userId} upgraded to ${plan}`);
       break;
     }
 
@@ -71,7 +76,7 @@ module.exports = async function handler(req, res) {
         .single();
 
       if (fetchErr) {
-        console.error(`Failed to find profile for customer ${customerId}:`, fetchErr.message);
+        log.error(`Failed to find profile for customer ${customerId}:`, fetchErr.message);
         return res.status(500).json({ error: 'Failed to find profile' });
       }
 
@@ -83,10 +88,10 @@ module.exports = async function handler(req, res) {
           .eq('id', profile.id);
 
         if (expireErr) {
-          console.error(`Failed to expire user ${profile.id}:`, expireErr.message);
+          log.error(`Failed to expire user ${profile.id}:`, expireErr.message);
           return res.status(500).json({ error: 'Failed to expire subscription' });
         }
-        console.log(`User ${profile.id} subscription expired`);
+        log.info(`User ${profile.id} subscription expired`);
       }
       break;
     }
@@ -95,7 +100,7 @@ module.exports = async function handler(req, res) {
     case 'invoice.payment_failed': {
       const invoice = event.data.object;
       const customerId = invoice.customer;
-      console.warn(`Payment failed for customer ${customerId}`);
+      log.warn(`Payment failed for customer ${customerId}`);
       // Stripe handles retries automatically. After final failure,
       // the subscription.deleted event fires and we expire the plan.
       break;

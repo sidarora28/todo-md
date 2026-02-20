@@ -3,6 +3,22 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 
+// ─── Constants ──────────────────────────────────────────────────
+const MS_PER_DAY = 86400000;
+const DAYS_IN_WEEK = 7;
+const INBOX_ARCHIVE_DAYS = 30;
+const DEFAULT_PORT = 3000;
+const ARCHIVE_THRESHOLD = 50;       // Archive completed tasks when count exceeds this
+const ARCHIVE_KEEP_COUNT = 20;      // Number of recent completed tasks to retain
+const MAX_TOKENS_DEFAULT = 1024;
+const MAX_TOKENS_SUMMARY = 512;
+const MAX_TOKENS_SEARCH = 512;
+const MAX_TOKENS_SEMANTIC = 256;
+const MAX_TOKENS_TEST = 30;
+const SEARCH_FILE_THRESHOLD = 50;   // File count above which grep is used instead of LLM
+const SEARCH_MAX_RESULTS = 10;      // Max top results from grep search
+const SEARCH_MAX_FILES_LLM = 5;     // Max files to send to LLM for semantic search
+
 // Desktop app mode: DATA_DIR and APP_ROOT are set by electron/main.js via process.env.
 // Standalone mode: both default to __dirname (original behavior).
 const APP_ROOT = process.env.APP_ROOT || __dirname;
@@ -14,7 +30,7 @@ if (!process.env.APP_ROOT) {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || DEFAULT_PORT;
 
 app.use(cors({ origin: /^http:\/\/localhost(:\d+)?$/ }));
 app.use(express.json());
@@ -116,7 +132,7 @@ async function callLLMProxy(prompt, options, authToken) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`
       },
-      body: JSON.stringify({ prompt, options: { maxTokens: options.maxTokens || 1024 } })
+      body: JSON.stringify({ prompt, options: { maxTokens: options.maxTokens || MAX_TOKENS_DEFAULT } })
     });
 
     const data = await res.json();
@@ -138,7 +154,7 @@ async function callLLMDirect(prompt, options = {}) {
     return { success: false, content: null, error: 'no_api_key' };
   }
 
-  const { model = config.model, maxTokens = 1024 } = options;
+  const { model = config.model, maxTokens = MAX_TOKENS_DEFAULT } = options;
 
   try {
     let response;
@@ -182,7 +198,7 @@ function getAllActiveTasks() {
   const allTasks = [];
   const completedThisWeek = [];
   const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
+  weekAgo.setDate(weekAgo.getDate() - DAYS_IN_WEEK);
   const dashboardProjects = {};
 
   if (fs.existsSync(projectsDir)) {
@@ -805,7 +821,7 @@ app.post('/api/ai/daily-summary', async (req, res) => {
     const { refresh = false } = req.body || {};
     const today = new Date().toISOString().split('T')[0];
     const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / MS_PER_DAY);
 
     // Return cached summary if available and not refreshing
     if (!refresh && dailySummaryCache.date === today && dailySummaryCache.summary) {
@@ -910,7 +926,7 @@ Return ONLY valid JSON (no other text):
     let quote = '';
     let highlights = [];
 
-    const result = await callLLM(prompt, { maxTokens: 512 });
+    const result = await callLLM(prompt, { maxTokens: MAX_TOKENS_SUMMARY });
 
     if (result.success) {
       try {
@@ -930,7 +946,7 @@ Return ONLY valid JSON (no other text):
 
     // Fallback: motivational summary if LLM fails or no API key
     if (!narrative) {
-      const dayOfYear = Math.floor((new Date(today) - new Date(today.split('-')[0], 0, 0)) / 86400000);
+      const dayOfYear = Math.floor((new Date(today) - new Date(today.split('-')[0], 0, 0)) / MS_PER_DAY);
       quote = FALLBACK_QUOTES[dayOfYear % FALLBACK_QUOTES.length];
 
       const parts = [];
@@ -952,11 +968,11 @@ Return ONLY valid JSON (no other text):
       // Check for projects with upcoming deadlines
       const urgentProjects = projectContext.filter(p => {
         if (p.targetDate === 'ongoing') return false;
-        const daysLeft = Math.ceil((new Date(p.targetDate) - new Date(today)) / 86400000);
-        return daysLeft >= 0 && daysLeft <= 7;
+        const daysLeft = Math.ceil((new Date(p.targetDate) - new Date(today)) / MS_PER_DAY);
+        return daysLeft >= 0 && daysLeft <= DAYS_IN_WEEK;
       });
       urgentProjects.forEach(p => {
-        const daysLeft = Math.ceil((new Date(p.targetDate) - new Date(today)) / 86400000);
+        const daysLeft = Math.ceil((new Date(p.targetDate) - new Date(today)) / MS_PER_DAY);
         parts.push(`${p.name} deadline is ${daysLeft === 0 ? 'today' : `in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`} — stay locked in.`);
       });
 
@@ -1018,7 +1034,7 @@ app.get('/api/ai/test', async (req, res) => {
   }
 
   try {
-    const testResult = await callLLM('Say hello in exactly 5 words.', { maxTokens: 30 });
+    const testResult = await callLLM('Say hello in exactly 5 words.', { maxTokens: MAX_TOKENS_TEST });
 
     if (!testResult.success) {
       return res.json({ status: testResult.error, provider: config.provider, model: config.model });
@@ -1044,7 +1060,7 @@ app.post('/api/ai/search', async (req, res) => {
     let results = [];
 
     // === PATH A: < 50 files + LLM → send everything for perfect accuracy ===
-    if (allFiles.length < 50 && hasLLM) {
+    if (allFiles.length < SEARCH_FILE_THRESHOLD && hasLLM) {
       const fileContext = allFiles.map(f => `=== ${f.file} ===\n${f.content}`).join('\n\n');
 
       const prompt = `You are a search assistant for a personal task management system.
@@ -1064,7 +1080,7 @@ Return JSON:
 
 Only include files that are actually relevant. Return at most 5 files. The "file" field must exactly match one of the file paths above.`;
 
-      const result = await callLLM(prompt, { maxTokens: 512 });
+      const result = await callLLM(prompt, { maxTokens: MAX_TOKENS_SEARCH });
       if (result.success) {
         try {
           const jsonStr = extractJSON(result.content);
@@ -1143,7 +1159,7 @@ Only include files that are actually relevant. Return at most 5 files. The "file
 
       // If LLM available, generate a semantic answer from top hits
       if (hasLLM && topResults.length > 0) {
-        const contextForLLM = topResults.slice(0, 5).map(r =>
+        const contextForLLM = topResults.slice(0, SEARCH_MAX_FILES_LLM).map(r =>
           `File: ${r.file}\n${r.snippet}`
         ).join('\n\n---\n\n');
 
@@ -1157,7 +1173,7 @@ Based ONLY on the file contents above, write a brief 1-3 sentence answer to the 
 
 Return ONLY the answer text, no JSON, no formatting.`;
 
-        const result = await callLLM(prompt, { maxTokens: 256 });
+        const result = await callLLM(prompt, { maxTokens: MAX_TOKENS_SEMANTIC });
         if (result.success) {
           answer = result.content.trim();
         } else {
@@ -1175,7 +1191,7 @@ Return ONLY the answer text, no JSON, no formatting.`;
 
     // ALWAYS guarantee a text answer
     if (!answer && results.length > 0) {
-      const fileList = results.slice(0, 5).map(r => r.file).join(', ');
+      const fileList = results.slice(0, SEARCH_MAX_FILES_LLM).map(r => r.file).join(', ');
       answer = `Found matches in ${results.length} file${results.length !== 1 ? 's' : ''}: ${fileList}. Open a file to see the details.`;
     } else if (!answer) {
       answer = 'No matching files found for your search.';
@@ -1782,10 +1798,10 @@ function archiveCompletedTasks(content) {
     }
   });
 
-  // If more than 50 completed tasks, archive the oldest ones
-  if (completedLines.length > 50) {
-    const toArchive = completedLines.slice(0, -20); // Keep last 20
-    const toKeep = completedLines.slice(-20);
+  // If completed tasks exceed threshold, archive the oldest ones
+  if (completedLines.length > ARCHIVE_THRESHOLD) {
+    const toArchive = completedLines.slice(0, -ARCHIVE_KEEP_COUNT);
+    const toKeep = completedLines.slice(-ARCHIVE_KEEP_COUNT);
 
     // Create archive file
     const now = new Date();
@@ -1825,7 +1841,7 @@ function archiveCompletedTasks(content) {
 function archiveOldInboxEntries(content) {
   const lines = content.split('\n');
   const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - INBOX_ARCHIVE_DAYS);
 
   const dateSections = [];
   let currentSection = { date: null, lines: [], startIndex: 0 };
