@@ -1055,7 +1055,7 @@ app.post('/api/ai/search', async (req, res) => {
     }
 
     const allFiles = collectAllMarkdownFiles();
-    const hasLLM = !!getLLMConfig();
+    const hasLLM = !!getLLMConfig() || !!process.env.AUTH_TOKEN;
     let answer = '';
     let results = [];
 

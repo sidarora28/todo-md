@@ -15,9 +15,14 @@ class DashboardWidget {
   }
 
   async load() {
-    const response = await fetch('/api/dashboard');
-    const data = await response.json();
-    this.render(data);
+    try {
+      const response = await fetch('/api/dashboard');
+      const data = await response.json();
+      this.render(data);
+    } catch (error) {
+      console.error('Failed to load dashboard:', error);
+      this.containerEl.innerHTML = '<div class="empty-state">Dashboard unavailable — working offline</div>';
+    }
   }
 
   async checkForUpdates() {

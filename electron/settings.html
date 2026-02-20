@@ -221,6 +221,23 @@
       <button class="btn-primary btn-small" id="upgrade-btn" style="display:none;">Upgrade</button>
       <button class="btn-secondary btn-small" id="logout-btn">Sign Out</button>
     </div>
+    <!-- Plan picker (shown when Upgrade is clicked) -->
+    <div id="plan-picker" style="display:none; margin-top:16px; display:none;">
+      <div style="display:flex; gap:8px;">
+        <button class="btn-secondary btn-small plan-option-btn" data-plan="monthly" style="flex:1; text-align:center; padding:12px 8px;">
+          <div style="font-weight:600; margin-bottom:2px;">Monthly</div>
+          <div style="font-size:11px; color:#858585;">$6.99/mo</div>
+        </button>
+        <button class="btn-secondary btn-small plan-option-btn" data-plan="annual" style="flex:1; text-align:center; padding:12px 8px;">
+          <div style="font-weight:600; margin-bottom:2px;">Annual</div>
+          <div style="font-size:11px; color:#858585;">$5/mo ($60/yr)</div>
+        </button>
+        <button class="btn-secondary btn-small plan-option-btn" data-plan="lifetime" style="flex:1; text-align:center; padding:12px 8px;">
+          <div style="font-weight:600; margin-bottom:2px;">Lifetime</div>
+          <div style="font-size:11px; color:#858585;">$150 once</div>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Editor Settings -->
@@ -356,15 +373,16 @@
       window.todomd.openDataFolder();
     });
 
-    // Upgrade
+    // Upgrade — show plan picker
     document.getElementById('upgrade-btn').addEventListener('click', () => {
-      // Show a simple choice — in production, could be a modal
-      const choice = confirm('Subscribe monthly ($8/mo)?\n\nClick Cancel for lifetime purchase ($79 one-time).');
-      if (choice) {
-        window.todomd.openCheckout('monthly');
-      } else {
-        window.todomd.openCheckout('lifetime');
-      }
+      const picker = document.getElementById('plan-picker');
+      picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('.plan-option-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        window.todomd.openCheckout(btn.dataset.plan);
+      });
     });
 
     // Manage billing
