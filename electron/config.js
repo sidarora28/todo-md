@@ -123,6 +123,11 @@ function getServerEnv() {
     env.PROXY_URL = config.proxyUrl;
   }
 
+  // User plan for feature gating in server.js
+  if (config.userPlan) {
+    env.USER_PLAN = config.userPlan;
+  }
+
   // Legacy: direct LLM keys (for users who haven't migrated)
   if (config.llmApiKey) {
     env.LLM_API_KEY = config.llmApiKey;

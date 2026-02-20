@@ -18,6 +18,7 @@ const MAX_TOKENS_TEST = 30;
 const SEARCH_FILE_THRESHOLD = 50;   // File count above which grep is used instead of LLM
 const SEARCH_MAX_RESULTS = 10;      // Max top results from grep search
 const SEARCH_MAX_FILES_LLM = 5;     // Max files to send to LLM for semantic search
+const FREE_PROJECT_LIMIT = 3;       // Max projects for free/trial/expired users
 
 // Desktop app mode: DATA_DIR and APP_ROOT are set by electron/main.js via process.env.
 // Standalone mode: both default to __dirname (original behavior).
@@ -31,6 +32,23 @@ if (!process.env.APP_ROOT) {
 
 const app = express();
 const PORT = process.env.PORT || DEFAULT_PORT;
+
+// ─── Plan Gating ────────────────────────────────────────────────
+// USER_PLAN is set by electron/config.js via getServerEnv().
+// Values: 'trial', 'active', 'lifetime', 'expired', or null (standalone/dev).
+// Standalone users (no Electron, no account) get full access — they run their own server.
+function isPaidPlan() {
+  const plan = process.env.USER_PLAN;
+  return !plan || plan === 'active' || plan === 'lifetime';
+}
+
+function countProjects() {
+  const projectsDir = path.join(DATA_DIR, 'projects');
+  if (!fs.existsSync(projectsDir)) return 0;
+  return fs.readdirSync(projectsDir).filter(p => {
+    return fs.statSync(path.join(projectsDir, p)).isDirectory();
+  }).length;
+}
 
 app.use(cors({ origin: /^http:\/\/localhost(:\d+)?$/ }));
 app.use(express.json());
@@ -266,8 +284,14 @@ function getAllActiveTasks() {
   return { projects: dashboardProjects, allTasks, completedThisWeek };
 }
 
-// LLM-powered project inference using OpenRouter
+// LLM-powered project inference
+// Free/trial/expired users skip the LLM call — tasks default to "others"
 async function inferProjects(tasks, availableProjects) {
+  // Free plan: skip LLM, default all tasks to "others"
+  if (!isPaidPlan()) {
+    return tasks.map((_, i) => ({ taskIndex: i + 1, project: 'others' }));
+  }
+
   const prompt = `Given these tasks and available projects, match each task to the most appropriate project. If no good match, use "others".
 
 Available projects: ${availableProjects.join(', ')}
@@ -685,7 +709,13 @@ app.get('/api/dashboard', (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
     const { projects } = getAllActiveTasks();
-    res.json({ date: today, projects });
+    const plan = {
+      isPaid: isPaidPlan(),
+      current: process.env.USER_PLAN || 'standalone',
+      projectLimit: isPaidPlan() ? null : FREE_PROJECT_LIMIT,
+      projectCount: countProjects()
+    };
+    res.json({ date: today, projects, plan });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -926,7 +956,10 @@ Return ONLY valid JSON (no other text):
     let quote = '';
     let highlights = [];
 
-    const result = await callLLM(prompt, { maxTokens: MAX_TOKENS_SUMMARY });
+    // Free/trial/expired users get the rule-based fallback — skip LLM call
+    const result = isPaidPlan()
+      ? await callLLM(prompt, { maxTokens: MAX_TOKENS_SUMMARY })
+      : { success: false, content: null, error: 'free_plan' };
 
     if (result.success) {
       try {
@@ -1055,11 +1088,12 @@ app.post('/api/ai/search', async (req, res) => {
     }
 
     const allFiles = collectAllMarkdownFiles();
-    const hasLLM = !!getLLMConfig() || !!process.env.AUTH_TOKEN;
+    const hasLLM = (!!getLLMConfig() || !!process.env.AUTH_TOKEN) && isPaidPlan();
     let answer = '';
     let results = [];
 
     // === PATH A: < 50 files + LLM → send everything for perfect accuracy ===
+    // (Paid plans only — free users fall through to keyword search)
     if (allFiles.length < SEARCH_FILE_THRESHOLD && hasLLM) {
       const fileContext = allFiles.map(f => `=== ${f.file} ===\n${f.content}`).join('\n\n');
 
@@ -1497,6 +1531,15 @@ app.post('/api/projects/create', (req, res) => {
     // Validate project key format (lowercase, hyphens only)
     if (!/^[a-z0-9-]+$/.test(projectKey)) {
       return res.status(400).json({ error: 'Project key must be lowercase with hyphens only' });
+    }
+
+    // Free-tier limit: max 3 projects
+    if (!isPaidPlan() && countProjects() >= FREE_PROJECT_LIMIT) {
+      return res.status(403).json({
+        error: `Free plan is limited to ${FREE_PROJECT_LIMIT} projects. Upgrade to create unlimited projects.`,
+        reason: 'project_limit',
+        limit: FREE_PROJECT_LIMIT
+      });
     }
 
     const projectDir = path.join(DATA_DIR, 'projects', projectKey);

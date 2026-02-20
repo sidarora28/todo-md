@@ -39,11 +39,13 @@ class StatusBanner {
 
     let html = '';
 
+    const limitsHint = '3 projects · keyword search · basic briefings';
+
     if (plan === 'expired') {
       // Trial expired
       html = `
         <span class="status-banner-text status-banner-warning">
-          Your free trial has ended. Core features still work — AI features require a subscription.
+          Free plan: ${limitsHint}. Upgrade for unlimited projects, AI search & daily briefings.
         </span>
         <button class="status-banner-btn status-banner-upgrade" id="banner-upgrade-btn">Upgrade</button>
         <button class="status-banner-dismiss" id="banner-dismiss-btn" title="Dismiss">&times;</button>
@@ -58,7 +60,7 @@ class StatusBanner {
         html = `
           <span class="status-banner-text status-banner-warning">
             ${days === 0 ? 'Trial expires today!' : `Trial ends in ${days} day${days === 1 ? '' : 's'}.`}
-            Upgrade to keep AI features.
+            After trial: ${limitsHint}.
           </span>
           <span class="status-banner-usage">${usage.today || 0}/${usage.limit || 0} AI requests today</span>
           <button class="status-banner-btn status-banner-upgrade" id="banner-upgrade-btn">Upgrade</button>
