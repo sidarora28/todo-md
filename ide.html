@@ -9,6 +9,9 @@
   <link rel="stylesheet" href="ide/styles/ide.css">
 </head>
 <body>
+  <!-- Trial / Account Status Banner (populated by JS when in Electron) -->
+  <div id="status-banner" class="status-banner" style="display:none"></div>
+
   <div class="ide-container">
     <!-- File Tree (left) -->
     <div class="file-tree-panel">
@@ -170,6 +173,7 @@
   <script src="ide/components/Resizer.js"></script>
   <script src="ide/components/ThemeToggle.js"></script>
   <script src="ide/components/SearchModal.js"></script>
+  <script src="ide/components/StatusBanner.js"></script>
   <script src="ide/app.js"></script>
 </body>
 </html>

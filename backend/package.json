@@ -1,0 +1,9 @@
+{
+  "name": "todomd-backend",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "stripe": "^17.5.0"
+  }
+}

@@ -1,5 +1,9 @@
 // Initialize IDE
 (async function() {
+  // Status banner (trial countdown / upgrade prompt) — loads async, non-blocking
+  const statusBanner = new StatusBanner(document.getElementById('status-banner'));
+  statusBanner.load();
+
   // Create components
   const fileTree = new FileTree(
     document.getElementById('file-tree'),

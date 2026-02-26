@@ -8,3 +8,12 @@ dashboard-data.json
 inbox/
 ideas/
 *-archive-*.md
+
+# Electron build output
+release/
+dist/
+*.dmg
+*.exe
+*.AppImage
+*.deb
+*.snap

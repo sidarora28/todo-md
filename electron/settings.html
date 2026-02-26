@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToDo.md — Settings</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1e1e1e;
+      color: #cccccc;
+      padding: 32px;
+      user-select: none;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      color: #f5f5f5;
+    }
+
+    .section {
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #3e3e42;
+    }
+    .section:last-child { border-bottom: none; }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #858585;
+      margin-bottom: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #cccccc;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    .folder-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .folder-path {
+      flex: 1;
+      padding: 10px 12px;
+      background: #2d2d30;
+      border: 1px solid #3e3e42;
+      border-radius: 6px;
+      color: #cccccc;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      word-break: break-all;
+    }
+
+    input[type="text"], input[type="password"], input[type="number"], select {
+      width: 100%;
+      padding: 10px 12px;
+      background: #2d2d30;
+      border: 1px solid #3e3e42;
+      border-radius: 6px;
+      color: #cccccc;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus {
+      border-color: #2dd4a8;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+    }
+    .row > .form-group { flex: 1; }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 16px;
+      transition: background 0.15s;
+    }
+
+    .btn-secondary {
+      background: #3e3e42;
+      color: #cccccc;
+    }
+    .btn-secondary:hover { background: #4e4e4e; }
+
+    .btn-small {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .btn-primary {
+      background: #2dd4a8;
+      color: #1e1e1e;
+      font-weight: 600;
+    }
+    .btn-primary:hover { background: #25b892; }
+
+    .actions {
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .version {
+      font-size: 12px;
+      color: #4e4e4e;
+    }
+
+    .saved-msg {
+      color: #4ec9b0;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .saved-msg.show { opacity: 1; }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+
+    .toggle-label {
+      font-size: 13px;
+      color: #cccccc;
+    }
+
+    .toggle {
+      width: 44px;
+      height: 24px;
+      background: #3e3e42;
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle.on { background: #2dd4a8; }
+    .toggle::after {
+      content: '';
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(20px); }
+  </style>
+</head>
+<body>
+  <h1>Settings</h1>
+
+  <!-- Data Folder -->
+  <div class="section">
+    <div class="section-title">Data Folder</div>
+    <div class="form-group">
+      <div class="folder-row">
+        <div class="folder-path" id="data-dir-display">—</div>
+        <button class="btn-secondary btn-small" id="change-dir-btn">Change</button>
+        <button class="btn-secondary btn-small" id="open-dir-btn">Open</button>
+      </div>
+      <div class="hint">Where your projects, daily files, and tasks are stored.</div>
+    </div>
+  </div>
+
+  <!-- Account & AI -->
+  <div class="section">
+    <div class="section-title">Account</div>
+    <div class="form-group">
+      <label>Email</label>
+      <div class="folder-path" id="account-email">—</div>
+    </div>
+    <div class="form-group">
+      <label>Plan</label>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <span id="plan-badge" style="display:inline-block; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600; background:#3e3e42; color:#cccccc;">—</span>
+        <span id="plan-detail" style="font-size:12px; color:#6b7280;"></span>
+      </div>
+    </div>
+    <div class="form-group" id="usage-group">
+      <label>AI Usage Today</label>
+      <div style="font-size:13px; color:#cccccc;">
+        <span id="usage-count">0</span> / <span id="usage-limit">0</span> requests
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <button class="btn-secondary btn-small" id="manage-billing-btn" style="display:none;">Manage Subscription</button>
+      <button class="btn-primary btn-small" id="upgrade-btn" style="display:none;">Upgrade</button>
+      <button class="btn-secondary btn-small" id="logout-btn">Sign Out</button>
+    </div>
+    <!-- Plan picker (shown when Upgrade is clicked) -->
+    <div id="plan-picker" style="display:none; margin-top:16px; display:none;">
+      <div style="display:flex; gap:8px;">
+        <button class="btn-secondary btn-small plan-option-btn" data-plan="monthly" style="flex:1; text-align:center; padding:12px 8px;">
+          <div style="font-weight:600; margin-bottom:2px;">Monthly</div>
+          <div style="font-size:11px; color:#858585;">$6.99/mo</div>
+        </button>
+        <button class="btn-secondary btn-small plan-option-btn" data-plan="annual" style="flex:1; text-align:center; padding:12px 8px;">
+          <div style="font-weight:600; margin-bottom:2px;">Annual</div>
+          <div style="font-size:11px; color:#858585;">$5/mo ($60/yr)</div>
+        </button>
+        <button class="btn-secondary btn-small plan-option-btn" data-plan="lifetime" style="flex:1; text-align:center; padding:12px 8px;">
+          <div style="font-weight:600; margin-bottom:2px;">Lifetime</div>
+          <div style="font-size:11px; color:#858585;">$150 once</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor Settings -->
+  <div class="section">
+    <div class="section-title">Editor</div>
+    <div class="row">
+      <div class="form-group">
+        <label>Font Size</label>
+        <input type="number" id="editor-font-size" min="10" max="24" value="14">
+      </div>
+      <div class="form-group">
+        <label>Word Wrap</label>
+        <select id="editor-word-wrap">
+          <option value="on">On</option>
+          <option value="off">Off</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Font Family</label>
+      <input type="text" id="editor-font-family" placeholder="JetBrains Mono, Menlo, Monaco, monospace">
+    </div>
+  </div>
+
+  <!-- App Settings -->
+  <div class="section">
+    <div class="section-title">App</div>
+    <div class="toggle-row">
+      <span class="toggle-label">Auto-check for updates</span>
+      <div class="toggle" id="auto-update-toggle"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <span class="version" id="version-label">v—</span>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <span class="saved-msg" id="saved-msg">Saved</span>
+      <button class="btn-primary" id="save-btn">Save</button>
+    </div>
+  </div>
+
+  <script>
+    let config = {};
+
+    async function loadConfig() {
+      config = await window.todomd.getConfig();
+
+      document.getElementById('data-dir-display').textContent = config.dataDir || '—';
+      document.getElementById('editor-font-size').value = config.editorFontSize || 14;
+      document.getElementById('editor-word-wrap').value = config.editorWordWrap || 'on';
+      document.getElementById('editor-font-family').value = config.editorFontFamily || '';
+
+      const toggle = document.getElementById('auto-update-toggle');
+      if (config.autoUpdate !== false) toggle.classList.add('on');
+      else toggle.classList.remove('on');
+
+      const version = await window.todomd.getAppVersion();
+      document.getElementById('version-label').textContent = `v${version}`;
+
+      // Load account status
+      loadAccountStatus();
+    }
+
+    async function loadAccountStatus() {
+      const status = await window.todomd.getAuthStatus();
+      const emailEl = document.getElementById('account-email');
+      const badge = document.getElementById('plan-badge');
+      const detail = document.getElementById('plan-detail');
+      const upgradeBtn = document.getElementById('upgrade-btn');
+      const billingBtn = document.getElementById('manage-billing-btn');
+
+      emailEl.textContent = status.email || config.userEmail || '—';
+
+      const plan = status.plan || config.userPlan || 'unknown';
+      const planLabels = {
+        trial: 'Free Trial',
+        active: 'Pro',
+        lifetime: 'Pro (Lifetime)',
+        expired: 'Expired'
+      };
+      badge.textContent = planLabels[plan] || plan;
+
+      // Style the badge by plan
+      if (plan === 'active' || plan === 'lifetime') {
+        badge.style.background = '#4ec9b0';
+        badge.style.color = '#1e1e1e';
+      } else if (plan === 'expired') {
+        badge.style.background = '#f48771';
+        badge.style.color = '#1e1e1e';
+      } else {
+        badge.style.background = '#2dd4a8';
+        badge.style.color = '#1e1e1e';
+      }
+
+      // Plan detail text
+      if (plan === 'trial' && status.trialDaysLeft !== undefined) {
+        detail.textContent = `${status.trialDaysLeft} days remaining`;
+      } else if (plan === 'expired') {
+        detail.textContent = 'Subscribe to re-enable AI features';
+      }
+
+      // Usage
+      if (status.usage) {
+        document.getElementById('usage-count').textContent = status.usage.today;
+        document.getElementById('usage-limit').textContent = status.usage.limit;
+      }
+
+      // Show/hide buttons
+      if (plan === 'trial' || plan === 'expired') {
+        upgradeBtn.style.display = 'inline-block';
+      }
+      if (plan === 'active') {
+        billingBtn.style.display = 'inline-block';
+      }
+    }
+
+    // Toggle click
+    document.getElementById('auto-update-toggle').addEventListener('click', function() {
+      this.classList.toggle('on');
+    });
+
+    // Change data dir
+    document.getElementById('change-dir-btn').addEventListener('click', async () => {
+      const newDir = await window.todomd.changeDataDir();
+      if (newDir) {
+        document.getElementById('data-dir-display').textContent = newDir;
+        config.dataDir = newDir;
+      }
+    });
+
+    // Open data dir
+    document.getElementById('open-dir-btn').addEventListener('click', () => {
+      window.todomd.openDataFolder();
+    });
+
+    // Upgrade — show plan picker
+    document.getElementById('upgrade-btn').addEventListener('click', () => {
+      const picker = document.getElementById('plan-picker');
+      picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('.plan-option-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        window.todomd.openCheckout(btn.dataset.plan);
+      });
+    });
+
+    // Manage billing
+    document.getElementById('manage-billing-btn').addEventListener('click', () => {
+      window.todomd.openBillingPortal();
+    });
+
+    // Sign out
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      if (confirm('Sign out? You will need to sign in again to use AI features.')) {
+        await window.todomd.logout();
+      }
+    });
+
+    // Save
+    document.getElementById('save-btn').addEventListener('click', async () => {
+      const updates = {
+        editorFontSize: parseInt(document.getElementById('editor-font-size').value) || 14,
+        editorWordWrap: document.getElementById('editor-word-wrap').value,
+        editorFontFamily: document.getElementById('editor-font-family').value.trim() || null,
+        autoUpdate: document.getElementById('auto-update-toggle').classList.contains('on')
+      };
+
+      // Only update dataDir if it changed
+      if (config.dataDir !== document.getElementById('data-dir-display').textContent) {
+        updates.dataDir = document.getElementById('data-dir-display').textContent;
+      }
+
+      await window.todomd.saveConfig(updates);
+
+      const msg = document.getElementById('saved-msg');
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 2000);
+    });
+
+    loadConfig();
+  </script>
+</body>
+</html>
