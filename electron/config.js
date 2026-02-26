@@ -31,6 +31,7 @@ const DEFAULTS = {
   userEmail: null,
   userPlan: null,        // trial | active | lifetime | expired
   trialEndsAt: null,
+  planLastChecked: null, // Timestamp of last successful auth-status check
   proxyUrl: null         // Override for dev; defaults to production
 };
 

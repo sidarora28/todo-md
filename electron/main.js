@@ -398,14 +398,82 @@ function getProxyUrl() {
   return config.get('proxyUrl') || DEFAULT_PROXY_URL;
 }
 
+/**
+ * Create a Supabase client for auth operations.
+ * Credentials come from env vars (injected at build time via electron-builder).
+ */
+function createSupabaseClient() {
+  const { createClient } = require('@supabase/supabase-js');
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase credentials not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey);
+}
+
+/**
+ * Refresh the Supabase JWT using the stored refresh token.
+ * Returns the new access token, or null if refresh failed.
+ */
+async function refreshAuthToken() {
+  const refreshToken = config.get('authRefreshToken');
+  if (!refreshToken) return null;
+
+  try {
+    const supabase = createSupabaseClient();
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+
+    if (error || !data.session) {
+      console.error('Token refresh failed:', error?.message || 'No session returned');
+      return null;
+    }
+
+    // Update stored tokens
+    config.set({
+      authToken: data.session.access_token,
+      authRefreshToken: data.session.refresh_token
+    });
+
+    // Update server environment so in-flight proxy calls use the new token
+    process.env.AUTH_TOKEN = data.session.access_token;
+
+    return data.session.access_token;
+  } catch (err) {
+    console.error('Token refresh error:', err.message);
+    return null;
+  }
+}
+
+/**
+ * Make an authenticated fetch to the backend proxy.
+ * Automatically retries once with a refreshed token on 401.
+ */
+async function authenticatedFetch(url, options = {}) {
+  let authToken = config.get('authToken');
+  if (!authToken) throw new Error('Not signed in');
+
+  options.headers = { ...options.headers, 'Authorization': `Bearer ${authToken}` };
+  let res = await fetch(url, options);
+
+  if (res.status === 401) {
+    // Token expired — try refreshing
+    const newToken = await refreshAuthToken();
+    if (newToken) {
+      options.headers['Authorization'] = `Bearer ${newToken}`;
+      res = await fetch(url, options);
+    }
+  }
+
+  return res;
+}
+
 // Login / Sign up — calls Supabase Auth via the backend-compatible REST API
 ipcMain.handle('auth-login', async (event, { email, password, isSignUp }) => {
   try {
-    const { createClient } = require('@supabase/supabase-js');
-    const supabaseUrl = process.env.SUPABASE_URL || 'SUPABASE_URL_PLACEHOLDER';
-    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'SUPABASE_ANON_KEY_PLACEHOLDER';
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = createSupabaseClient();
 
     let result;
     if (isSignUp) {
@@ -429,8 +497,27 @@ ipcMain.handle('auth-login', async (event, { email, password, isSignUp }) => {
       authToken: session.access_token,
       authRefreshToken: session.refresh_token,
       userEmail: email,
-      userPlan: 'trial' // Default; will be fetched from backend
+      userPlan: 'trial' // Default until we fetch from backend below
     });
+
+    // Fetch the real plan from backend BEFORE starting the server,
+    // so isPaidPlan() has the correct value from the start.
+    try {
+      const proxyUrl = getProxyUrl();
+      const statusRes = await fetch(`${proxyUrl}/api/auth/status`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      if (statusRes.ok) {
+        const statusData = await statusRes.json();
+        config.set({
+          userPlan: statusData.plan,
+          trialEndsAt: statusData.trialEndsAt,
+          planLastChecked: Date.now()
+        });
+      }
+    } catch {
+      // Offline — server will start with 'trial', StatusBanner will correct later
+    }
 
     // Close login window and start the app
     if (loginWindow) {
@@ -463,16 +550,19 @@ ipcMain.handle('auth-logout', async () => {
   return true;
 });
 
-// Get auth status from backend
+// Get auth status from backend (auto-refreshes token on 401)
 ipcMain.handle('auth-status', async () => {
   const authToken = config.get('authToken');
   if (!authToken) return { loggedIn: false };
 
   try {
     const proxyUrl = getProxyUrl();
-    const res = await fetch(`${proxyUrl}/api/auth/status`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
+    const res = await authenticatedFetch(`${proxyUrl}/api/auth/status`);
+
+    if (res.status === 401) {
+      // Refresh failed too — session is dead, force re-login
+      return { loggedIn: false, error: 'Session expired. Please sign in again.' };
+    }
 
     if (!res.ok) return { loggedIn: false, error: 'Failed to fetch status' };
 
@@ -480,12 +570,27 @@ ipcMain.handle('auth-status', async () => {
     // Update local config with latest plan info
     config.set({
       userPlan: data.plan,
-      trialEndsAt: data.trialEndsAt
+      trialEndsAt: data.trialEndsAt,
+      planLastChecked: Date.now()
     });
+
+    // Keep server.js in sync with latest plan
+    process.env.USER_PLAN = data.plan;
 
     return { loggedIn: true, ...data };
   } catch (err) {
-    return { loggedIn: true, email: config.get('userEmail'), plan: config.get('userPlan'), offline: true };
+    // Offline fallback — use cached plan but flag staleness
+    const planLastChecked = config.get('planLastChecked');
+    const staleness = planLastChecked ? Date.now() - planLastChecked : Infinity;
+    const STALE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
+
+    return {
+      loggedIn: true,
+      email: config.get('userEmail'),
+      plan: config.get('userPlan'),
+      offline: true,
+      stale: staleness > STALE_THRESHOLD
+    };
   }
 });
 
@@ -498,12 +603,9 @@ ipcMain.handle('billing-checkout', async (event, priceType) => {
 
   try {
     const proxyUrl = getProxyUrl();
-    const res = await fetch(`${proxyUrl}/api/billing/checkout`, {
+    const res = await authenticatedFetch(`${proxyUrl}/api/billing/checkout`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ priceType })
     });
 
@@ -525,12 +627,9 @@ ipcMain.handle('billing-portal', async () => {
 
   try {
     const proxyUrl = getProxyUrl();
-    const res = await fetch(`${proxyUrl}/api/billing/portal`, {
+    const res = await authenticatedFetch(`${proxyUrl}/api/billing/portal`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      }
+      headers: { 'Content-Type': 'application/json' }
     });
 
     const data = await res.json();

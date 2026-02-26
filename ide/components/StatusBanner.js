@@ -7,6 +7,7 @@ class StatusBanner {
     this.el = el;
     this.status = null;
     this.dismissed = false;
+    this._refreshInterval = null;
   }
 
   async load() {
@@ -23,6 +24,34 @@ class StatusBanner {
     if (!this.status || !this.status.loggedIn) return;
 
     this.render();
+
+    // Re-check auth status every 30 minutes to catch plan changes and trial expiry
+    if (!this._refreshInterval) {
+      this._refreshInterval = setInterval(() => this._refresh(), 30 * 60 * 1000);
+    }
+  }
+
+  async _refresh() {
+    if (!window.todomd || !window.todomd.getAuthStatus) return;
+    try {
+      const newStatus = await window.todomd.getAuthStatus();
+      if (!newStatus || !newStatus.loggedIn) return;
+
+      // Only re-render if plan or usage changed
+      const changed = !this.status ||
+        newStatus.plan !== this.status.plan ||
+        newStatus.trialDaysLeft !== this.status.trialDaysLeft ||
+        (newStatus.usage && this.status.usage &&
+          newStatus.usage.today !== this.status.usage.today);
+
+      if (changed) {
+        this.status = newStatus;
+        this.dismissed = false; // Re-show if plan changed
+        this.render();
+      }
+    } catch {
+      // Offline — keep showing current status
+    }
   }
 
   render() {
