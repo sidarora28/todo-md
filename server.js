@@ -37,8 +37,14 @@ const PORT = process.env.PORT || DEFAULT_PORT;
 // USER_PLAN is set by electron/config.js via getServerEnv().
 // Values: 'trial', 'active', 'lifetime', 'expired', or null (standalone/dev).
 // Standalone users (no Electron, no account) get full access — they run their own server.
+// Desktop app users MUST have a valid paid plan — no freebies from missing env var.
 function isPaidPlan() {
   const plan = process.env.USER_PLAN;
+  if (process.env.IS_DESKTOP) {
+    // Desktop app: require explicit paid plan
+    return plan === 'active' || plan === 'lifetime';
+  }
+  // Standalone/self-hosted: no plan = full access (user runs their own server + AI keys)
   return !plan || plan === 'active' || plan === 'lifetime';
 }
 
@@ -1520,7 +1526,7 @@ ${title}
 });
 
 // API endpoint to create new project
-app.post('/api/projects/create', (req, res) => {
+app.post('/api/projects/create', async (req, res) => {
   try {
     const { projectKey, projectName, goal = '', targetDate = 'ongoing' } = req.body;
 
@@ -1534,7 +1540,33 @@ app.post('/api/projects/create', (req, res) => {
     }
 
     // Free-tier limit: max 3 projects
-    if (!isPaidPlan() && countProjects() >= FREE_PROJECT_LIMIT) {
+    // In desktop mode, verify plan with backend to prevent config.json tampering
+    if (process.env.IS_DESKTOP && countProjects() >= FREE_PROJECT_LIMIT) {
+      const authToken = process.env.AUTH_TOKEN;
+      let verified = false;
+      if (authToken) {
+        try {
+          const statusRes = await fetch(`${PROXY_URL}/api/auth/status`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          });
+          if (statusRes.ok) {
+            const data = await statusRes.json();
+            process.env.USER_PLAN = data.plan; // Sync latest plan
+            verified = data.plan === 'active' || data.plan === 'lifetime';
+          }
+        } catch {
+          // Network error — fall back to local check
+          verified = isPaidPlan();
+        }
+      }
+      if (!verified) {
+        return res.status(403).json({
+          error: `Free plan is limited to ${FREE_PROJECT_LIMIT} projects. Upgrade to create unlimited projects.`,
+          reason: 'project_limit',
+          limit: FREE_PROJECT_LIMIT
+        });
+      }
+    } else if (!isPaidPlan() && countProjects() >= FREE_PROJECT_LIMIT) {
       return res.status(403).json({
         error: `Free plan is limited to ${FREE_PROJECT_LIMIT} projects. Upgrade to create unlimited projects.`,
         reason: 'project_limit',

@@ -177,8 +177,51 @@ function showSettingsWindow() {
 
 // ─── Start the App ──────────────────────────────────────────────
 
+/**
+ * Re-validate the user's plan with the backend before starting the server.
+ * Prevents config.json tampering (e.g., manually setting userPlan to "active").
+ * On failure (offline), falls back to cached plan with staleness check.
+ */
+async function revalidatePlan() {
+  const authToken = config.get('authToken');
+  if (!authToken) return; // No token = login required anyway
+
+  try {
+    const proxyUrl = getProxyUrl();
+    const res = await fetch(`${proxyUrl}/api/auth/status`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      config.set({
+        userPlan: data.plan,
+        trialEndsAt: data.trialEndsAt,
+        planLastChecked: Date.now()
+      });
+    } else if (res.status === 401) {
+      // Token expired and no auto-refresh here — clear plan to force free-tier
+      config.set({ userPlan: 'expired' });
+    }
+  } catch {
+    // Offline — check staleness of cached plan
+    const planLastChecked = config.get('planLastChecked');
+    const staleness = planLastChecked ? Date.now() - planLastChecked : Infinity;
+    const STALE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
+
+    if (staleness > STALE_THRESHOLD) {
+      // Plan data too old — downgrade to expired until we can verify
+      config.set({ userPlan: 'expired' });
+    }
+  }
+}
+
 async function startApp() {
   try {
+    // Re-validate plan with backend before starting the server
+    // Prevents config.json tampering between sessions
+    await revalidatePlan();
+
     serverPort = await startServer();
     createMainWindow();
     Menu.setApplicationMenu(buildMenu(app, mainWindow, showSettingsWindow));
@@ -202,6 +245,7 @@ function startServer() {
     // Inject DATA_DIR and LLM config into the environment before loading server.js
     process.env.DATA_DIR = dataDir;
     process.env.PORT = '0'; // Let OS pick an available port
+    process.env.IS_DESKTOP = '1'; // Signal to server.js that we're in desktop mode
 
     // Inject LLM config from our settings
     const serverEnv = config.getServerEnv();
