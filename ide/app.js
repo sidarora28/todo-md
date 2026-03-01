@@ -35,12 +35,14 @@
   const resizerLeft = new Resizer(
     document.getElementById('resizer-left'),
     leftPanel,
-    document.querySelector('.editor-panel')
+    document.querySelector('.editor-panel'),
+    'left'
   );
   const resizerRight = new Resizer(
     document.getElementById('resizer-right'),
     rightPanel,
-    document.querySelector('.editor-panel')
+    document.querySelector('.editor-panel'),
+    'right'
   );
 
   // Initialize editor and load data in parallel so one failure doesn't block the other
