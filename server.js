@@ -65,21 +65,42 @@ app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://microsoft.github.io; " +
+    "script-src 'self' 'unsafe-inline'; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "img-src 'self' data:; " +
-    "font-src 'self' data: https://fonts.gstatic.com https://microsoft.github.io https://cdn.jsdelivr.net; " +
-    "worker-src 'self' blob: https://cdn.jsdelivr.net; " +
-    "connect-src 'self' https://todo-md-desktop.vercel.app https://todomd.app https://cdn.jsdelivr.net"
+    "font-src 'self' data: https://fonts.gstatic.com; " +
+    "worker-src 'self' blob:; " +
+    "connect-src 'self' https://todo-md-desktop.vercel.app https://todomd.app"
   );
   next();
 });
+
+// Serve Monaco Editor from node_modules for offline support
+app.use('/vs', express.static(path.join(APP_ROOT, 'node_modules', 'monaco-editor', 'min', 'vs'), {
+  dotfiles: 'deny',
+  maxAge: '7d'
+}));
+
+// Serve codicons from node_modules for offline support
+app.use('/codicons', express.static(path.join(APP_ROOT, 'node_modules', '@vscode', 'codicons', 'dist'), {
+  dotfiles: 'deny',
+  maxAge: '7d'
+}));
 
 app.use(express.static(APP_ROOT, {
   dotfiles: 'deny',
   index: false,
   extensions: ['html', 'css', 'js', 'png', 'jpg', 'gif', 'svg', 'ico', 'woff', 'woff2', 'ttf']
 }));
+
+// Editor settings endpoint (reads from env vars set by Electron, or returns defaults)
+app.get('/api/settings/editor', (req, res) => {
+  res.json({
+    fontSize: parseInt(process.env.EDITOR_FONT_SIZE) || 14,
+    fontFamily: process.env.EDITOR_FONT_FAMILY || 'JetBrains Mono, Menlo, Monaco, monospace',
+    wordWrap: process.env.EDITOR_WORD_WRAP || 'on'
+  });
+});
 
 // Redirect root to IDE
 app.get('/', (req, res) => {

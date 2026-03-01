@@ -10,7 +10,7 @@
     if (t) document.documentElement.setAttribute('data-theme', t);
   </script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css">
+  <link rel="stylesheet" href="/codicons/codicon.css">
   <link rel="stylesheet" href="ide/styles/ide.css">
 </head>
 <body>
@@ -165,8 +165,8 @@
   <!-- Context Menu -->
   <div id="context-menu" class="context-menu" style="display:none"></div>
 
-  <!-- Monaco Loader -->
-  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+  <!-- Monaco Loader (served locally for offline support) -->
+  <script src="/vs/loader.js"></script>
 
   <!-- IDE Components -->
   <script src="ide/utils/monaco-setup.js"></script>

@@ -1,7 +1,7 @@
 async function setupMonaco() {
-  // Load Monaco from CDN
+  // Load Monaco from local server (bundled for offline support)
   require.config({
-    paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' }
+    paths: { 'vs': '/vs' }
   });
 
   return new Promise(resolve => {

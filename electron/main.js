@@ -256,6 +256,12 @@ function startServer() {
     const serverEnv = config.getServerEnv();
     Object.assign(process.env, serverEnv);
 
+    // Inject editor settings so the server can serve them via API
+    const allConfig = config.getAll();
+    process.env.EDITOR_FONT_SIZE = String(allConfig.editorFontSize || 14);
+    process.env.EDITOR_FONT_FAMILY = allConfig.editorFontFamily || '';
+    process.env.EDITOR_WORD_WRAP = allConfig.editorWordWrap || 'on';
+
     // Set APP_ROOT so server.js knows where to serve static files from
     process.env.APP_ROOT = APP_ROOT;
 
@@ -427,6 +433,17 @@ ipcMain.handle('save-config', async (event, updates) => {
   // If auth or proxy settings changed, update server environment
   const serverEnv = config.getServerEnv();
   Object.assign(process.env, serverEnv);
+
+  // Update editor settings in environment so the server API reflects them
+  const allConfig = config.getAll();
+  process.env.EDITOR_FONT_SIZE = String(allConfig.editorFontSize || 14);
+  process.env.EDITOR_FONT_FAMILY = allConfig.editorFontFamily || '';
+  process.env.EDITOR_WORD_WRAP = allConfig.editorWordWrap || 'on';
+
+  // Reload IDE to apply editor settings
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.reload();
+  }
 
   return true;
 });

@@ -9,16 +9,24 @@ class EditorComponent {
   async init() {
     await setupMonaco(); // From monaco-setup.js
 
+    // Fetch editor settings from config (font size, word wrap, font family)
+    let settings = { fontSize: 14, wordWrap: 'on', fontFamily: 'JetBrains Mono, Menlo, Monaco, monospace' };
+    try {
+      const res = await fetch('/api/settings/editor');
+      if (res.ok) settings = await res.json();
+    } catch (e) { /* use defaults */ }
+
     const currentTheme = localStorage.getItem('theme') || 'dark';
 
     this.editor = monaco.editor.create(this.containerEl, {
       value: '',
       language: 'todomd',
       theme: currentTheme === 'dark' ? 'todomd-dark' : 'todomd-light',
-      fontSize: 14,
+      fontSize: settings.fontSize,
+      fontFamily: settings.fontFamily,
       lineNumbers: 'on',
       minimap: { enabled: false },
-      wordWrap: 'on',
+      wordWrap: settings.wordWrap,
       automaticLayout: true
     });
 
