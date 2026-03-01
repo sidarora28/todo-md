@@ -384,6 +384,24 @@ ipcMain.handle('complete-setup', async (event, setupData) => {
     }
   }
 
+  // Create a sample project so the file tree isn't empty on first launch
+  const sampleProjectDir = path.join(dataDir, 'projects', 'getting-started');
+  if (!fs.existsSync(sampleProjectDir)) {
+    const sampleTasksDir = path.join(sampleProjectDir, 'tasks');
+    fs.mkdirSync(sampleTasksDir, { recursive: true });
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const today = now.toISOString().split('T')[0];
+
+    fs.writeFileSync(path.join(sampleProjectDir, 'PROJECT.md'),
+      '---\ntype: project\nstatus: active\ntarget-date: ongoing\n---\n# Getting Started\n\n## Goal\nLearn how ToDo.md works.\n\n## Milestones\n- [x] Install the app\n- [ ] Create your first project\n- [ ] Add a task\n\n## Notes\nThis is a sample project to help you get started. Feel free to edit or delete it.\n');
+
+    fs.writeFileSync(path.join(sampleTasksDir, `${year}-${month}.md`),
+      `# Getting Started - ${now.toLocaleString('default', { month: 'long' })} ${year}\n\n## Active Tasks\n\n---\n### Explore the app\ndue: ${today}\npriority: medium\nstatus: todo\ntags: [onboarding]\ncreated: ${today}\n\nClick through the file tree, open files, and try the dashboard.\n---\n\n## Completed Tasks\n`);
+  }
+
   // Save config (no LLM keys — managed via auth proxy)
   config.set({ dataDir });
 
@@ -544,11 +562,13 @@ ipcMain.handle('auth-login', async (event, { email, password, isSignUp }) => {
     }
 
     // Store auth tokens in config (server reads from config via getServerEnv())
+    // Set planLastChecked so revalidatePlan() doesn't immediately expire the user if offline
     config.set({
       authToken: session.access_token,
       authRefreshToken: session.refresh_token,
       userEmail: email,
-      userPlan: 'trial' // Default until we fetch from backend below
+      userPlan: 'trial', // Default until we fetch from backend below
+      planLastChecked: Date.now()
     });
 
     // Fetch the real plan from backend BEFORE starting the server,

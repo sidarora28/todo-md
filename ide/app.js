@@ -43,12 +43,17 @@
     document.querySelector('.editor-panel')
   );
 
-  // Initialize Monaco Editor
-  await editor.init();
+  // Initialize editor and load data in parallel so one failure doesn't block the other
+  const [editorResult] = await Promise.allSettled([
+    editor.init(),
+    fileTree.load(),
+    dashboardWidget.load()
+  ]);
 
-  // Load initial data
-  await fileTree.load();
-  await dashboardWidget.load();
+  if (editorResult.status === 'rejected') {
+    console.error('Editor failed to initialize:', editorResult.reason);
+  }
+
   dashboardWidget.loadDailySummary();
 
   // Wire search button

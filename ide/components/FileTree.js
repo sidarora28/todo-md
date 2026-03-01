@@ -7,10 +7,20 @@ class FileTree {
   }
 
   async load() {
-    const response = await fetch('/api/files/tree');
-    const data = await response.json();
-    this.containerEl.innerHTML = '';
-    this.render(data.tree.children, this.containerEl);
+    try {
+      const response = await fetch('/api/files/tree');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      this.containerEl.innerHTML = '';
+      if (data.tree && data.tree.children && data.tree.children.length > 0) {
+        this.render(data.tree.children, this.containerEl);
+      } else {
+        this.containerEl.innerHTML = '<div style="padding: 12px; color: #858585; font-size: 13px;">No files yet. Create a project to get started.</div>';
+      }
+    } catch (err) {
+      console.error('Failed to load file tree:', err);
+      this.containerEl.innerHTML = '<div style="padding: 12px; color: #f48771; font-size: 13px;">Failed to load files</div>';
+    }
   }
 
   render(items, parentEl, depth = 0) {
