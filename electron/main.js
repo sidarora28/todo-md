@@ -449,16 +449,18 @@ function getProxyUrl() {
 
 /**
  * Create a Supabase client for auth operations.
- * Credentials come from .env file (loaded at startup via dotenv).
+ * Uses built-in defaults (anon key is a public client key, safe to embed).
+ * Can be overridden via env vars for development/self-hosting.
  */
+const SUPABASE_DEFAULTS = {
+  url: 'https://uhsmtaqasoktuouvxwbp.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoc210YXFhc29rdHVvdXZ4d2JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzODE5ODEsImV4cCI6MjA4Njk1Nzk4MX0.Eu2QheM2IRdfHTP4VEq6hYpYypVqCxUMXvrbfRxfc7w'
+};
+
 function createSupabaseClient() {
   const { createClient } = require('@supabase/supabase-js');
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase credentials not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
-  }
+  const supabaseUrl = process.env.SUPABASE_URL || SUPABASE_DEFAULTS.url;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || SUPABASE_DEFAULTS.anonKey;
 
   return createClient(supabaseUrl, supabaseAnonKey);
 }
