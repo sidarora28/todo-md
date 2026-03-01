@@ -8,6 +8,11 @@
 const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+// Load .env from the app root (project root in dev, app.asar parent in production)
+const APP_ROOT_FOR_ENV = path.join(__dirname, '..');
+require('dotenv').config({ path: path.join(APP_ROOT_FOR_ENV, '.env') });
+
 const config = require('./config');
 const { buildMenu } = require('./menu');
 const { initAutoUpdater, checkForUpdates } = require('./updater');
@@ -444,7 +449,7 @@ function getProxyUrl() {
 
 /**
  * Create a Supabase client for auth operations.
- * Credentials come from env vars (injected at build time via electron-builder).
+ * Credentials come from .env file (loaded at startup via dotenv).
  */
 function createSupabaseClient() {
   const { createClient } = require('@supabase/supabase-js');
