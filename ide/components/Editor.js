@@ -34,8 +34,19 @@ class EditorComponent {
   }
 
   async loadFile(filePath) {
+    if (!this.editor) {
+      console.warn('Editor not initialized, cannot load file:', filePath);
+      return;
+    }
+
     const response = await fetch(`/api/files/read?path=${encodeURIComponent(filePath)}`);
+    if (!response.ok) {
+      console.error('Failed to load file:', filePath, response.status);
+      return;
+    }
+
     const data = await response.json();
+    if (!data.content && data.content !== '') return;
 
     this.currentFile = filePath;
     this.editor.setValue(data.content);
@@ -44,7 +55,8 @@ class EditorComponent {
 
     // Start auto-saver
     if (this.autoSaver) this.autoSaver.stop();
-    this.autoSaver = new AutoSaver(this.editor, filePath, data.stats.modified);
+    const lastModified = data.stats && data.stats.modified ? data.stats.modified : null;
+    this.autoSaver = new AutoSaver(this.editor, filePath, lastModified);
     this.autoSaver.start();
   }
 

@@ -193,9 +193,16 @@
       startBtn.disabled = true;
       startBtn.textContent = 'Setting up...';
 
-      await window.todomd.completeSetup({
-        dataDir: selectedFolder
-      });
+      try {
+        await window.todomd.completeSetup({
+          dataDir: selectedFolder
+        });
+      } catch (err) {
+        folderError.textContent = 'Setup failed — check folder permissions and try again.';
+        folderError.style.display = 'block';
+        startBtn.disabled = false;
+        startBtn.textContent = 'Get Started';
+      }
     });
   </script>
 </body>

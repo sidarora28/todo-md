@@ -69,6 +69,7 @@ app.use((req, res, next) => {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://microsoft.github.io; " +
     "img-src 'self' data:; " +
     "font-src 'self' data: https://fonts.gstatic.com https://microsoft.github.io https://cdn.jsdelivr.net; " +
+    "worker-src 'self' blob: https://cdn.jsdelivr.net; " +
     "connect-src 'self' https://todo-md-desktop.vercel.app https://todomd.app https://cdn.jsdelivr.net"
   );
   next();
@@ -1742,7 +1743,7 @@ ${title}
 function isPathSafe(requestedPath) {
   const resolved = path.resolve(DATA_DIR, requestedPath);
   const blacklist = ['node_modules', '.git', '.env', 'server.js', 'setup.js', 'package.json', 'package-lock.json'];
-  const segments = requestedPath.split(path.sep);
+  const segments = requestedPath.split(/[/\\]/);
 
   return (resolved === DATA_DIR || resolved.startsWith(DATA_DIR + path.sep)) &&
          !requestedPath.includes('..') &&
@@ -1770,7 +1771,7 @@ function buildFileTree(dirPath, basePath = '') {
     })
     .map(entry => {
       const fullPath = path.join(dirPath, entry.name);
-      const relativePath = basePath ? path.join(basePath, entry.name) : entry.name;
+      const relativePath = basePath ? (basePath + '/' + entry.name) : entry.name;
 
       if (entry.isDirectory()) {
         return {

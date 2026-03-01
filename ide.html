@@ -1,9 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Task IDE</title>
+  <script>
+    // Apply saved theme immediately to prevent flash of unstyled content
+    const t = localStorage.getItem('theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  </script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css">
   <link rel="stylesheet" href="ide/styles/ide.css">
@@ -41,7 +46,7 @@
         <span id="current-file" class="current-file">No file open</span>
         <span id="save-indicator" class="save-indicator">✓ Saved</span>
       </div>
-      <div id="monaco-container"></div>
+      <div id="monaco-container"><div style="padding: 24px; color: #858585; font-size: 13px;">Loading editor...</div></div>
     </div>
 
     <!-- Resizer -->
