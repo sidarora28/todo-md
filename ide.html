@@ -1,14 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Task IDE</title>
+  <script>
+    // Apply saved theme immediately to prevent flash of unstyled content
+    const t = localStorage.getItem('theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  </script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="https://microsoft.github.io/vscode-codicons/dist/codicon.css">
+  <link rel="stylesheet" href="/codicons/codicon.css">
   <link rel="stylesheet" href="ide/styles/ide.css">
 </head>
 <body>
+  <!-- Trial / Account Status Banner (populated by JS when in Electron) -->
+  <div id="status-banner" class="status-banner" style="display:none"></div>
+
   <div class="ide-container">
     <!-- File Tree (left) -->
     <div class="file-tree-panel">
@@ -38,7 +46,7 @@
         <span id="current-file" class="current-file">No file open</span>
         <span id="save-indicator" class="save-indicator">✓ Saved</span>
       </div>
-      <div id="monaco-container"></div>
+      <div id="monaco-container"><div style="padding: 24px; color: #858585; font-size: 13px;">Loading editor...</div></div>
     </div>
 
     <!-- Resizer -->
@@ -157,8 +165,8 @@
   <!-- Context Menu -->
   <div id="context-menu" class="context-menu" style="display:none"></div>
 
-  <!-- Monaco Loader -->
-  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+  <!-- Monaco Loader (served locally for offline support) -->
+  <script src="/vs/loader.js"></script>
 
   <!-- IDE Components -->
   <script src="ide/utils/monaco-setup.js"></script>
@@ -170,6 +178,7 @@
   <script src="ide/components/Resizer.js"></script>
   <script src="ide/components/ThemeToggle.js"></script>
   <script src="ide/components/SearchModal.js"></script>
+  <script src="ide/components/StatusBanner.js"></script>
   <script src="ide/app.js"></script>
 </body>
 </html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — ToDo.md</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">ToDo<span>.md</span></a>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/download" class="nav-cta">Download &rarr;</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section style="padding: 8rem 0 4rem;">
+    <div class="container" style="max-width: 720px;">
+      <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Privacy Policy</h1>
+      <p style="color: var(--text-secondary); margin-bottom: 2rem;">Last updated: February 20, 2026</p>
+
+      <div style="line-height: 1.8; color: var(--text);">
+        <h2 style="font-size: 1.25rem; margin: 2rem 0 0.75rem;">1. What We Collect</h2>
+        <p><strong>Account data:</strong> When you sign up, we store your email address and a hashed password in our authentication provider (Supabase). We never see or store your plaintext password.</p>
+        <p style="margin-top: 0.75rem;"><strong>Usage data:</strong> We track the number of AI requests you make per day for rate-limiting purposes. This counter resets daily and is not used for analytics or profiling.</p>
+        <p style="margin-top: 0.75rem;"><strong>Payment data:</strong> If you subscribe, payment is processed by Stripe. We store your Stripe customer ID to manage your subscription. We never see your full card number.</p>
+
+        <h2 style="font-size: 1.25rem; margin: 2rem 0 0.75rem;">2. What We Don't Collect</h2>
+        <p><strong>Your files:</strong> All your .md files (tasks, projects, daily notes) are stored locally on your machine. We never upload, read, or have access to your content.</p>
+        <p style="margin-top: 0.75rem;"><strong>Telemetry:</strong> ToDo.md does not collect usage analytics, crash reports, or device fingerprints. There are no tracking pixels, third-party analytics scripts, or ad networks.</p>
+
+        <h2 style="font-size: 1.25rem; margin: 2rem 0 0.75rem;">3. AI Features</h2>
+        <p>When you use AI-powered features (semantic search, daily briefings, task inference), the relevant text is sent to the configured LLM provider (OpenAI, Anthropic, or OpenRouter) through our managed proxy. This data is used solely to generate a response and is not stored by us. Please review the privacy policy of your chosen LLM provider for their data handling practices.</p>
+
+        <h2 style="font-size: 1.25rem; margin: 2rem 0 0.75rem;">4. Data Storage & Security</h2>
+        <p>Account and usage data is stored in Supabase (PostgreSQL) with row-level security. All API communication uses HTTPS. Authentication tokens are stored locally in your app config and transmitted via Bearer headers.</p>
+
+        <h2 style="font-size: 1.25rem; margin: 2rem 0 0.75rem;">5. Data Deletion</h2>
+        <p>You can delete your account at any time by contacting us at hello@todomd.app. Upon deletion, we remove your profile, usage history, and Stripe customer link. Your local .md files are unaffected since they live on your machine.</p>
+
+        <h2 style="font-size: 1.25rem; margin: 2rem 0 0.75rem;">6. Third-Party Services</h2>
+        <ul style="padding-left: 1.5rem; margin-top: 0.5rem;">
+          <li><strong>Supabase</strong> — authentication &amp; database</li>
+          <li><strong>Stripe</strong> — payment processing</li>
+          <li><strong>GitHub</strong> — app distribution &amp; auto-updates</li>
+          <li><strong>LLM providers</strong> — AI features (OpenAI, Anthropic, OpenRouter)</li>
+        </ul>
+
+        <h2 style="font-size: 1.25rem; margin: 2rem 0 0.75rem;">7. Changes</h2>
+        <p>We may update this policy. Material changes will be announced via the app or our GitHub repository.</p>
+
+        <h2 style="font-size: 1.25rem; margin: 2rem 0 0.75rem;">8. Contact</h2>
+        <p>Questions? Email us at <a href="mailto:hello@todomd.app" style="color: var(--accent);">hello@todomd.app</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <ul class="footer-links">
+        <li><a href="https://github.com/sidarora28/todo-md" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="/privacy">Privacy</a></li>
+        <li><a href="/terms">Terms</a></li>
+      </ul>
+      <p class="footer-copy">&copy; 2026 ToDo.md</p>
+    </div>
+  </footer>
+
+</body>
+</html>

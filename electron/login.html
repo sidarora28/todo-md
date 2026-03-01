@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToDo.md — Sign In</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1e1e1e;
+      color: #cccccc;
+      padding: 40px 32px;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #f5f5f5;
+    }
+
+    .subtitle {
+      color: #858585;
+      margin-bottom: 32px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      -webkit-app-region: no-drag;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #cccccc;
+    }
+
+    input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      background: #2d2d30;
+      border: 1px solid #3e3e42;
+      border-radius: 6px;
+      color: #cccccc;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus { border-color: #2dd4a8; }
+
+    button {
+      -webkit-app-region: no-drag;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 16px;
+      transition: background 0.15s;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: #2dd4a8;
+      color: #1e1e1e;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    .btn-primary:hover { background: #25b892; }
+    .btn-primary:disabled {
+      background: #3e3e42;
+      color: #858585;
+      cursor: not-allowed;
+    }
+
+    .toggle-mode {
+      background: none;
+      color: #2dd4a8;
+      margin-top: 16px;
+      font-size: 13px;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .toggle-mode:hover { color: #25b892; }
+
+    .error {
+      color: #f48771;
+      font-size: 12px;
+      margin-top: 8px;
+      display: none;
+      text-align: center;
+    }
+
+    .success {
+      color: #4ec9b0;
+      font-size: 12px;
+      margin-top: 8px;
+      display: none;
+      text-align: center;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 24px 0;
+      color: #4e4e4e;
+      font-size: 12px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #3e3e42;
+    }
+    .divider::before { margin-right: 12px; }
+    .divider::after { margin-left: 12px; }
+
+    .trial-info {
+      text-align: center;
+      color: #858585;
+      font-size: 12px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="title">Sign in to ToDo.md</h1>
+  <p class="subtitle" id="subtitle">
+    Sign in to access AI-powered search, daily briefings, and more.
+  </p>
+
+  <div class="form-group">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+  </div>
+
+  <div class="form-group">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+  </div>
+
+  <div class="error" id="error"></div>
+  <div class="success" id="success"></div>
+
+  <button class="btn-primary" id="submit-btn">Sign In</button>
+
+  <div class="trial-info" id="trial-info" style="display: none;">
+    Includes a 14-day free trial. No credit card required.
+  </div>
+
+  <button class="toggle-mode" id="toggle-btn">Don't have an account? Create one</button>
+
+  <script>
+    let isSignUp = false;
+
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submit-btn');
+    const toggleBtn = document.getElementById('toggle-btn');
+    const errorEl = document.getElementById('error');
+    const successEl = document.getElementById('success');
+    const titleEl = document.getElementById('title');
+    const subtitleEl = document.getElementById('subtitle');
+    const trialInfo = document.getElementById('trial-info');
+
+    toggleBtn.addEventListener('click', () => {
+      isSignUp = !isSignUp;
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (isSignUp) {
+        titleEl.textContent = 'Create your account';
+        subtitleEl.textContent = 'Start your 14-day free trial — no credit card required.';
+        submitBtn.textContent = 'Create Account';
+        toggleBtn.textContent = 'Already have an account? Sign in';
+        trialInfo.style.display = 'block';
+      } else {
+        titleEl.textContent = 'Sign in to ToDo.md';
+        subtitleEl.textContent = 'Sign in to access AI-powered search, daily briefings, and more.';
+        submitBtn.textContent = 'Sign In';
+        toggleBtn.textContent = "Don't have an account? Create one";
+        trialInfo.style.display = 'none';
+      }
+    });
+
+    submitBtn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!email || !password) {
+        showError('Please enter your email and password.');
+        return;
+      }
+
+      if (password.length < 6) {
+        showError('Password must be at least 6 characters.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = isSignUp ? 'Creating account...' : 'Signing in...';
+      errorEl.style.display = 'none';
+
+      try {
+        const result = await window.todomd.login({
+          email,
+          password,
+          isSignUp
+        });
+
+        if (result.error) {
+          showError(result.error);
+          submitBtn.disabled = false;
+          submitBtn.textContent = isSignUp ? 'Create Account' : 'Sign In';
+        }
+        // If successful, main process will close this window and start the app
+      } catch (err) {
+        showError('Something went wrong. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = isSignUp ? 'Create Account' : 'Sign In';
+      }
+    });
+
+    // Submit on Enter key
+    [emailInput, passwordInput].forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitBtn.click();
+      });
+    });
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.style.display = 'block';
+      successEl.style.display = 'none';
+    }
+  </script>
+</body>
+</html>

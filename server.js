@@ -2,18 +2,105 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// ─── Constants ──────────────────────────────────────────────────
+const MS_PER_DAY = 86400000;
+const DAYS_IN_WEEK = 7;
+const INBOX_ARCHIVE_DAYS = 30;
+const DEFAULT_PORT = 3000;
+const ARCHIVE_THRESHOLD = 50;       // Archive completed tasks when count exceeds this
+const ARCHIVE_KEEP_COUNT = 20;      // Number of recent completed tasks to retain
+const MAX_TOKENS_DEFAULT = 1024;
+const MAX_TOKENS_SUMMARY = 512;
+const MAX_TOKENS_SEARCH = 512;
+const MAX_TOKENS_SEMANTIC = 256;
+const MAX_TOKENS_TEST = 30;
+const SEARCH_FILE_THRESHOLD = 50;   // File count above which grep is used instead of LLM
+const SEARCH_MAX_RESULTS = 10;      // Max top results from grep search
+const SEARCH_MAX_FILES_LLM = 5;     // Max files to send to LLM for semantic search
+const FREE_PROJECT_LIMIT = 3;       // Max projects for free/trial/expired users
+
+// Desktop app mode: DATA_DIR and APP_ROOT are set by electron/main.js via process.env.
+// Standalone mode: both default to __dirname (original behavior).
+const APP_ROOT = process.env.APP_ROOT || __dirname;
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+
+// Load .env only in standalone mode (desktop app uses electron/config.js instead)
+if (!process.env.APP_ROOT) {
+  require('dotenv').config({ path: path.join(__dirname, '.env') });
+}
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || DEFAULT_PORT;
 
-app.use(cors({ origin: `http://localhost:${PORT}` }));
+// ─── Plan Gating ────────────────────────────────────────────────
+// USER_PLAN is set by electron/config.js via getServerEnv().
+// Values: 'trial', 'active', 'lifetime', 'expired', or null (standalone/dev).
+// Standalone users (no Electron, no account) get full access — they run their own server.
+// Desktop app users MUST have a valid paid plan — no freebies from missing env var.
+function isPaidPlan() {
+  const plan = process.env.USER_PLAN;
+  if (process.env.IS_DESKTOP) {
+    // Desktop app: require explicit paid plan
+    return plan === 'active' || plan === 'lifetime';
+  }
+  // Standalone/self-hosted: no plan = full access (user runs their own server + AI keys)
+  return !plan || plan === 'active' || plan === 'lifetime';
+}
+
+function countProjects() {
+  const projectsDir = path.join(DATA_DIR, 'projects');
+  if (!fs.existsSync(projectsDir)) return 0;
+  return fs.readdirSync(projectsDir).filter(p => {
+    return fs.statSync(path.join(projectsDir, p)).isDirectory();
+  }).length;
+}
+
+app.use(cors({ origin: /^http:\/\/localhost(:\d+)?$/ }));
 app.use(express.json());
-app.use(express.static(__dirname, {
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline'; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "img-src 'self' data:; " +
+    "font-src 'self' data: https://fonts.gstatic.com; " +
+    "worker-src 'self' blob:; " +
+    "connect-src 'self' https://todo-md-desktop.vercel.app https://todomd.app"
+  );
+  next();
+});
+
+// Serve Monaco Editor from node_modules for offline support
+app.use('/vs', express.static(path.join(APP_ROOT, 'node_modules', 'monaco-editor', 'min', 'vs'), {
+  dotfiles: 'deny',
+  maxAge: '7d'
+}));
+
+// Serve codicons from node_modules for offline support
+app.use('/codicons', express.static(path.join(APP_ROOT, 'node_modules', '@vscode', 'codicons', 'dist'), {
+  dotfiles: 'deny',
+  maxAge: '7d'
+}));
+
+app.use(express.static(APP_ROOT, {
   dotfiles: 'deny',
   index: false,
   extensions: ['html', 'css', 'js', 'png', 'jpg', 'gif', 'svg', 'ico', 'woff', 'woff2', 'ttf']
 }));
+
+// Editor settings endpoint (reads from env vars set by Electron, or returns defaults)
+app.get('/api/settings/editor', (req, res) => {
+  res.json({
+    fontSize: parseInt(process.env.EDITOR_FONT_SIZE) || 14,
+    fontFamily: process.env.EDITOR_FONT_FAMILY || 'JetBrains Mono, Menlo, Monaco, monospace',
+    wordWrap: process.env.EDITOR_WORD_WRAP || 'on'
+  });
+});
 
 // Redirect root to IDE
 app.get('/', (req, res) => {
@@ -22,7 +109,7 @@ app.get('/', (req, res) => {
 
 // Helper function to read dashboard data
 function getDashboardData() {
-  const dataPath = path.join(__dirname, 'dashboard-data.json');
+  const dataPath = path.join(DATA_DIR, 'dashboard-data.json');
   if (fs.existsSync(dataPath)) {
     return JSON.parse(fs.readFileSync(dataPath, 'utf8'));
   }
@@ -31,7 +118,7 @@ function getDashboardData() {
 
 // Helper function to write dashboard data
 function saveDashboardData(data) {
-  const dataPath = path.join(__dirname, 'dashboard-data.json');
+  const dataPath = path.join(DATA_DIR, 'dashboard-data.json');
   fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
 }
 
@@ -44,92 +131,90 @@ function extractJSON(text) {
 
 // Auto-detect LLM provider from API key prefix or explicit env vars
 // Returns { provider, apiKey, model, endpoint }
+// ─── AI Proxy ───────────────────────────────────────────────────
+// Routes LLM calls through the managed backend proxy.
+// Falls back to direct API calls if a legacy LLM_API_KEY is set.
+
+const PROXY_URL = process.env.PROXY_URL || 'https://todo-md-desktop.vercel.app';
+
 function getLLMConfig() {
-  // Support explicit provider config
-  const explicitProvider = process.env.LLM_PROVIDER;
-  const explicitKey = process.env.LLM_API_KEY;
-  const explicitModel = process.env.LLM_MODEL;
-
-  // Legacy support
-  const legacyKey = process.env.OPENROUTER_API_KEY;
-  const legacyModel = process.env.OPENROUTER_MODEL;
-
-  const apiKey = explicitKey || legacyKey;
+  const apiKey = process.env.LLM_API_KEY || process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
-  // Determine provider: explicit > auto-detect from key prefix
-  let provider = explicitProvider;
+  let provider = process.env.LLM_PROVIDER;
   if (!provider) {
     if (apiKey.startsWith('sk-ant-')) provider = 'anthropic';
     else if (apiKey.startsWith('sk-or-v1-')) provider = 'openrouter';
     else if (apiKey.startsWith('sk-')) provider = 'openai';
-    else provider = 'openrouter'; // default fallback
+    else provider = 'openrouter';
   }
 
+  const model = process.env.LLM_MODEL || process.env.OPENROUTER_MODEL;
   const configs = {
-    openai: {
-      provider: 'openai',
-      apiKey,
-      model: explicitModel || legacyModel || 'gpt-5-mini',
-      endpoint: 'https://api.openai.com/v1/chat/completions'
-    },
-    anthropic: {
-      provider: 'anthropic',
-      apiKey,
-      model: explicitModel || legacyModel || 'claude-opus-4-5-20250929',
-      endpoint: 'https://api.anthropic.com/v1/messages'
-    },
-    openrouter: {
-      provider: 'openrouter',
-      apiKey,
-      model: explicitModel || legacyModel || 'anthropic/claude-opus-4-5',
-      endpoint: 'https://openrouter.ai/api/v1/chat/completions'
-    }
+    openai:     { provider: 'openai',     apiKey, model: model || 'gpt-4o-mini', endpoint: 'https://api.openai.com/v1/chat/completions' },
+    anthropic:  { provider: 'anthropic',  apiKey, model: model || 'claude-sonnet-4-5-20250929', endpoint: 'https://api.anthropic.com/v1/messages' },
+    openrouter: { provider: 'openrouter', apiKey, model: model || 'anthropic/claude-sonnet-4-5', endpoint: 'https://openrouter.ai/api/v1/chat/completions' }
   };
-
   return configs[provider] || configs.openrouter;
 }
 
-// Shared LLM helper - calls OpenAI, Anthropic, or OpenRouter API
-// Returns { success: boolean, content: string|null, error: string|null }
+// Shared LLM helper — returns { success, content, error }
 async function callLLM(prompt, options = {}) {
+  // Prefer managed proxy if user is authenticated
+  const authToken = process.env.AUTH_TOKEN;
+  if (authToken) {
+    return callLLMProxy(prompt, options, authToken);
+  }
+  // Fallback: direct API call with legacy keys
+  return callLLMDirect(prompt, options);
+}
+
+// Call through managed backend proxy
+async function callLLMProxy(prompt, options, authToken) {
+  try {
+    const res = await fetch(`${PROXY_URL}/api/ai/proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ prompt, options: { maxTokens: options.maxTokens || MAX_TOKENS_DEFAULT } })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      console.error('Proxy error:', res.status, data.error);
+      return { success: false, content: null, error: data.error || `proxy_error_${res.status}` };
+    }
+    return { success: true, content: data.content, error: null };
+  } catch (error) {
+    console.error('Proxy call failed:', error.message);
+    return { success: false, content: null, error: 'network_error' };
+  }
+}
+
+// Direct LLM call (legacy — for users with their own API keys)
+async function callLLMDirect(prompt, options = {}) {
   const config = getLLMConfig();
   if (!config) {
     return { success: false, content: null, error: 'no_api_key' };
   }
 
-  const { model = config.model, maxTokens = 1024 } = options;
+  const { model = config.model, maxTokens = MAX_TOKENS_DEFAULT } = options;
 
   try {
     let response;
-
     if (config.provider === 'anthropic') {
       response = await fetch(config.endpoint, {
         method: 'POST',
-        headers: {
-          'x-api-key': config.apiKey,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: maxTokens,
-          messages: [{ role: 'user', content: prompt }]
-        })
+        headers: { 'x-api-key': config.apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] })
       });
     } else {
-      // OpenAI and OpenRouter use the same format
       response = await fetch(config.endpoint, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${config.apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: maxTokens,
-          messages: [{ role: 'user', content: prompt }]
-        })
+        headers: { 'Authorization': `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] })
       });
     }
 
@@ -140,15 +225,12 @@ async function callLLM(prompt, options = {}) {
     }
 
     const data = await response.json();
-
-    // Anthropic uses a different response format
     let content;
     if (config.provider === 'anthropic') {
       content = data.content?.[0]?.text;
     } else {
       content = data.choices?.[0]?.message?.content;
     }
-
     return { success: true, content, error: null };
   } catch (error) {
     console.error('LLM call failed:', error.message);
@@ -158,11 +240,11 @@ async function callLLM(prompt, options = {}) {
 
 // Shared helper to gather all tasks from project files
 function getAllActiveTasks() {
-  const projectsDir = path.join(__dirname, 'projects');
+  const projectsDir = path.join(DATA_DIR, 'projects');
   const allTasks = [];
   const completedThisWeek = [];
   const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
+  weekAgo.setDate(weekAgo.getDate() - DAYS_IN_WEEK);
   const dashboardProjects = {};
 
   if (fs.existsSync(projectsDir)) {
@@ -230,8 +312,14 @@ function getAllActiveTasks() {
   return { projects: dashboardProjects, allTasks, completedThisWeek };
 }
 
-// LLM-powered project inference using OpenRouter
+// LLM-powered project inference
+// Free/trial/expired users skip the LLM call — tasks default to "others"
 async function inferProjects(tasks, availableProjects) {
+  // Free plan: skip LLM, default all tasks to "others"
+  if (!isPaidPlan()) {
+    return tasks.map((_, i) => ({ taskIndex: i + 1, project: 'others' }));
+  }
+
   const prompt = `Given these tasks and available projects, match each task to the most appropriate project. If no good match, use "others".
 
 Available projects: ${availableProjects.join(', ')}
@@ -287,7 +375,7 @@ function findTaskInFile(filePath, taskTitle) {
         break;
       }
       const title = line.replace('### ', '').trim();
-      if (title === taskTitle) {
+      if (title.toLowerCase() === taskTitle.toLowerCase()) {
         inTask = true;
         taskStart = i;
         taskLines.push(line);
@@ -312,16 +400,16 @@ function getMonthlyFilePath(projectName) {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  return path.join(__dirname, 'projects', projectName, 'tasks', `${year}-${month}.md`);
+  return path.join(DATA_DIR, 'projects', projectName, 'tasks', `${year}-${month}.md`);
 }
 
 // Helper function to generate daily file from all monthly task files
 function generateDailyFile(date) {
-  const projectsDir = path.join(__dirname, 'projects');
-  const dailyFilePath = path.join(__dirname, 'daily', `${date}.md`);
+  const projectsDir = path.join(DATA_DIR, 'projects');
+  const dailyFilePath = path.join(DATA_DIR, 'daily', `${date}.md`);
 
   // Ensure daily directory exists
-  const dailyDir = path.join(__dirname, 'daily');
+  const dailyDir = path.join(DATA_DIR, 'daily');
   if (!fs.existsSync(dailyDir)) {
     fs.mkdirSync(dailyDir, { recursive: true });
   }
@@ -411,14 +499,47 @@ function generateDailyFile(date) {
   return dailyFilePath;
 }
 
+// Helper function to find a task across ALL monthly files for a project
+function findTaskInProject(projectKey, taskTitle) {
+  const tasksDir = path.join(DATA_DIR, 'projects', projectKey, 'tasks');
+  if (!fs.existsSync(tasksDir)) return null;
+
+  const taskFiles = fs.readdirSync(tasksDir).filter(f => f.endsWith('.md'));
+  for (const file of taskFiles) {
+    const filePath = path.join(tasksDir, file);
+    const result = findTaskInFile(filePath, taskTitle);
+    if (result) return { ...result, filePath };
+  }
+  return null;
+}
+
+// Helper function to update a task's due date in a monthly file
+function updateTaskDueDate(title, projectKey, newDate) {
+  const result = findTaskInProject(projectKey, title);
+  if (!result) return;
+
+  const { allLines, taskStart, taskEnd, filePath } = result;
+
+  for (let i = taskStart; i <= taskEnd; i++) {
+    if (allLines[i].startsWith('due:')) {
+      const currentDue = allLines[i].replace('due:', '').trim();
+      if (currentDue < newDate) {
+        allLines[i] = `due: ${newDate}`;
+        fs.writeFileSync(filePath, allLines.join('\n'));
+      }
+      break;
+    }
+  }
+}
+
 // Helper function to add a task block to a project's monthly file
 function addTaskToMonthlyFile(title, projectKey, date) {
   const monthlyFilePath = getMonthlyFilePath(projectKey);
   if (!fs.existsSync(monthlyFilePath)) {
     // Create monthly file if project exists
-    const projectDir = path.join(__dirname, 'projects', projectKey, 'tasks');
+    const projectDir = path.join(DATA_DIR, 'projects', projectKey, 'tasks');
     if (!fs.existsSync(projectDir)) {
-      const projectRoot = path.join(__dirname, 'projects', projectKey);
+      const projectRoot = path.join(DATA_DIR, 'projects', projectKey);
       if (!fs.existsSync(projectRoot)) return false;
       fs.mkdirSync(projectDir, { recursive: true });
     }
@@ -429,8 +550,8 @@ function addTaskToMonthlyFile(title, projectKey, date) {
     fs.writeFileSync(monthlyFilePath, header, 'utf8');
   }
 
-  // Check if task already exists in monthly file
-  const existing = findTaskInFile(monthlyFilePath, title);
+  // Check if task already exists in ANY monthly file for this project
+  const existing = findTaskInProject(projectKey, title);
   if (existing) return false; // Already exists, skip
 
   // Add task to Active Tasks section
@@ -473,29 +594,39 @@ async function syncNewTasksFromDaily(dailyContent, date) {
   const lines = dailyContent.split('\n');
   const tasksWithProject = [];
   const tasksWithoutProject = [];
+  let currentSection = '';
 
-  // Match: - [ ] or - [] with optional (project-key)
+  // Match: - [ ] or - [] with optional (project-key), tracking which section they're in
   lines.forEach(line => {
+    if (line.startsWith('## ')) {
+      currentSection = line.replace('## ', '').trim().toLowerCase();
+      return;
+    }
     const match = line.match(/^-\s+\[[ ]?\]\s+(.+?)(?:\s+\(([^)]+)\))?\s*$/);
     if (match) {
       const title = match[1].trim();
       const projectKey = match[2] ? match[2].trim() : null;
+      const inTodaySection = currentSection === 'today';
       if (projectKey) {
-        tasksWithProject.push({ title, projectKey });
+        tasksWithProject.push({ title, projectKey, inTodaySection });
       } else {
-        tasksWithoutProject.push({ title });
+        tasksWithoutProject.push({ title, inTodaySection });
       }
     }
   });
 
   // Sync tasks that already have a project
-  tasksWithProject.forEach(({ title, projectKey }) => {
-    addTaskToMonthlyFile(title, projectKey, date);
+  tasksWithProject.forEach(({ title, projectKey, inTodaySection }) => {
+    const added = addTaskToMonthlyFile(title, projectKey, date);
+    // If task already existed and user moved it to Today, update the due date
+    if (!added && inTodaySection) {
+      updateTaskDueDate(title, projectKey, date);
+    }
   });
 
   // For tasks without a project, use LLM inference
   if (tasksWithoutProject.length > 0) {
-    const projectsDir = path.join(__dirname, 'projects');
+    const projectsDir = path.join(DATA_DIR, 'projects');
     const availableProjects = fs.existsSync(projectsDir)
       ? fs.readdirSync(projectsDir).filter(p => {
           const projectPath = path.join(projectsDir, p);
@@ -534,15 +665,12 @@ function syncTodayToMonthly(dailyContent, date) {
     }
   });
 
-  // Mark each task as done in its monthly file
+  // Mark each task as done in its monthly file (search ALL months, not just current)
   checkedTasks.forEach(({ title, projectKey }) => {
-    const monthlyFilePath = getMonthlyFilePath(projectKey);
-    if (!fs.existsSync(monthlyFilePath)) return;
-
-    const taskInfo = findTaskInFile(monthlyFilePath, title);
+    const taskInfo = findTaskInProject(projectKey, title);
     if (!taskInfo) return;
 
-    const { allLines, taskStart, taskEnd } = taskInfo;
+    const { allLines, taskStart, taskEnd, filePath: monthlyFilePath } = taskInfo;
 
     // Extract task block
     const taskBlock = allLines.slice(taskStart, taskEnd + 1);
@@ -609,7 +737,13 @@ app.get('/api/dashboard', (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
     const { projects } = getAllActiveTasks();
-    res.json({ date: today, projects });
+    const plan = {
+      isPaid: isPaidPlan(),
+      current: process.env.USER_PLAN || 'standalone',
+      projectLimit: isPaidPlan() ? null : FREE_PROJECT_LIMIT,
+      projectCount: countProjects()
+    };
+    res.json({ date: today, projects, plan });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -745,7 +879,7 @@ app.post('/api/ai/daily-summary', async (req, res) => {
     const { refresh = false } = req.body || {};
     const today = new Date().toISOString().split('T')[0];
     const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / MS_PER_DAY);
 
     // Return cached summary if available and not refreshing
     if (!refresh && dailySummaryCache.date === today && dailySummaryCache.summary) {
@@ -774,7 +908,7 @@ app.post('/api/ai/daily-summary', async (req, res) => {
 
     // Gather project context from PROJECT.md files
     const projectContext = [];
-    const projectsDir = path.join(__dirname, 'projects');
+    const projectsDir = path.join(DATA_DIR, 'projects');
     if (fs.existsSync(projectsDir)) {
       fs.readdirSync(projectsDir, { withFileTypes: true })
         .filter(d => d.isDirectory())
@@ -850,7 +984,10 @@ Return ONLY valid JSON (no other text):
     let quote = '';
     let highlights = [];
 
-    const result = await callLLM(prompt, { maxTokens: 512 });
+    // Free/trial/expired users get the rule-based fallback — skip LLM call
+    const result = isPaidPlan()
+      ? await callLLM(prompt, { maxTokens: MAX_TOKENS_SUMMARY })
+      : { success: false, content: null, error: 'free_plan' };
 
     if (result.success) {
       try {
@@ -870,7 +1007,7 @@ Return ONLY valid JSON (no other text):
 
     // Fallback: motivational summary if LLM fails or no API key
     if (!narrative) {
-      const dayOfYear = Math.floor((new Date(today) - new Date(today.split('-')[0], 0, 0)) / 86400000);
+      const dayOfYear = Math.floor((new Date(today) - new Date(today.split('-')[0], 0, 0)) / MS_PER_DAY);
       quote = FALLBACK_QUOTES[dayOfYear % FALLBACK_QUOTES.length];
 
       const parts = [];
@@ -892,11 +1029,11 @@ Return ONLY valid JSON (no other text):
       // Check for projects with upcoming deadlines
       const urgentProjects = projectContext.filter(p => {
         if (p.targetDate === 'ongoing') return false;
-        const daysLeft = Math.ceil((new Date(p.targetDate) - new Date(today)) / 86400000);
-        return daysLeft >= 0 && daysLeft <= 7;
+        const daysLeft = Math.ceil((new Date(p.targetDate) - new Date(today)) / MS_PER_DAY);
+        return daysLeft >= 0 && daysLeft <= DAYS_IN_WEEK;
       });
       urgentProjects.forEach(p => {
-        const daysLeft = Math.ceil((new Date(p.targetDate) - new Date(today)) / 86400000);
+        const daysLeft = Math.ceil((new Date(p.targetDate) - new Date(today)) / MS_PER_DAY);
         parts.push(`${p.name} deadline is ${daysLeft === 0 ? 'today' : `in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`} — stay locked in.`);
       });
 
@@ -935,9 +1072,9 @@ function collectAllMarkdownFiles() {
     });
   };
 
-  searchDirs.forEach(dir => collectDir(path.join(__dirname, dir), dir));
+  searchDirs.forEach(dir => collectDir(path.join(DATA_DIR, dir), dir));
   ['tasks.md', 'inbox.md'].forEach(f => {
-    const fp = path.join(__dirname, f);
+    const fp = path.join(DATA_DIR, f);
     if (fs.existsSync(fp)) files.push({ file: f, content: fs.readFileSync(fp, 'utf8') });
   });
   return files;
@@ -945,7 +1082,7 @@ function collectAllMarkdownFiles() {
 
 // GET /api/ai/test - Diagnostic endpoint to test LLM connectivity
 app.get('/api/ai/test', async (req, res) => {
-  const envPath = path.join(__dirname, '.env');
+  const envPath = path.join(DATA_DIR, '.env');
   const envExists = fs.existsSync(envPath);
   const config = getLLMConfig();
 
@@ -958,7 +1095,7 @@ app.get('/api/ai/test', async (req, res) => {
   }
 
   try {
-    const testResult = await callLLM('Say hello in exactly 5 words.', { maxTokens: 30 });
+    const testResult = await callLLM('Say hello in exactly 5 words.', { maxTokens: MAX_TOKENS_TEST });
 
     if (!testResult.success) {
       return res.json({ status: testResult.error, provider: config.provider, model: config.model });
@@ -979,12 +1116,13 @@ app.post('/api/ai/search', async (req, res) => {
     }
 
     const allFiles = collectAllMarkdownFiles();
-    const hasLLM = !!getLLMConfig();
+    const hasLLM = (!!getLLMConfig() || !!process.env.AUTH_TOKEN) && isPaidPlan();
     let answer = '';
     let results = [];
 
     // === PATH A: < 50 files + LLM → send everything for perfect accuracy ===
-    if (allFiles.length < 50 && hasLLM) {
+    // (Paid plans only — free users fall through to keyword search)
+    if (allFiles.length < SEARCH_FILE_THRESHOLD && hasLLM) {
       const fileContext = allFiles.map(f => `=== ${f.file} ===\n${f.content}`).join('\n\n');
 
       const prompt = `You are a search assistant for a personal task management system.
@@ -1004,7 +1142,7 @@ Return JSON:
 
 Only include files that are actually relevant. Return at most 5 files. The "file" field must exactly match one of the file paths above.`;
 
-      const result = await callLLM(prompt, { maxTokens: 512 });
+      const result = await callLLM(prompt, { maxTokens: MAX_TOKENS_SEARCH });
       if (result.success) {
         try {
           const jsonStr = extractJSON(result.content);
@@ -1083,7 +1221,7 @@ Only include files that are actually relevant. Return at most 5 files. The "file
 
       // If LLM available, generate a semantic answer from top hits
       if (hasLLM && topResults.length > 0) {
-        const contextForLLM = topResults.slice(0, 5).map(r =>
+        const contextForLLM = topResults.slice(0, SEARCH_MAX_FILES_LLM).map(r =>
           `File: ${r.file}\n${r.snippet}`
         ).join('\n\n---\n\n');
 
@@ -1097,7 +1235,7 @@ Based ONLY on the file contents above, write a brief 1-3 sentence answer to the 
 
 Return ONLY the answer text, no JSON, no formatting.`;
 
-        const result = await callLLM(prompt, { maxTokens: 256 });
+        const result = await callLLM(prompt, { maxTokens: MAX_TOKENS_SEMANTIC });
         if (result.success) {
           answer = result.content.trim();
         } else {
@@ -1115,7 +1253,7 @@ Return ONLY the answer text, no JSON, no formatting.`;
 
     // ALWAYS guarantee a text answer
     if (!answer && results.length > 0) {
-      const fileList = results.slice(0, 5).map(r => r.file).join(', ');
+      const fileList = results.slice(0, SEARCH_MAX_FILES_LLM).map(r => r.file).join(', ');
       answer = `Found matches in ${results.length} file${results.length !== 1 ? 's' : ''}: ${fileList}. Open a file to see the details.`;
     } else if (!answer) {
       answer = 'No matching files found for your search.';
@@ -1133,7 +1271,7 @@ app.get('/api/daily/ensure', (req, res) => {
   try {
     const { date } = req.query;
     const targetDate = date || new Date().toISOString().split('T')[0];
-    const dailyFilePath = path.join(__dirname, 'daily', `${targetDate}.md`);
+    const dailyFilePath = path.join(DATA_DIR, 'daily', `${targetDate}.md`);
 
     let generated = false;
 
@@ -1161,7 +1299,7 @@ app.post('/api/files/ensure-capture-files', (req, res) => {
     let created = [];
 
     // Ensure inbox.md exists
-    const inboxPath = path.join(__dirname, 'inbox.md');
+    const inboxPath = path.join(DATA_DIR, 'inbox.md');
     if (!fs.existsSync(inboxPath)) {
       const inboxContent = `<!-- Instructions: Use this as a scratchpad for random thoughts, ideas, and notes. Entries are automatically organized by date when you save. No need to format - just type freely. -->\n\n## ${today}\n`;
       fs.writeFileSync(inboxPath, inboxContent, 'utf8');
@@ -1169,7 +1307,7 @@ app.post('/api/files/ensure-capture-files', (req, res) => {
     }
 
     // Ensure tasks.md exists
-    const tasksPath = path.join(__dirname, 'tasks.md');
+    const tasksPath = path.join(DATA_DIR, 'tasks.md');
     if (!fs.existsSync(tasksPath)) {
       const tasksContent = `<!-- Instructions: Quickly capture tasks here using format: task name | due date | project (optional). Tasks sync to project files on save. Leave project blank to auto-detect. -->\n\n## Examples (Reference - Do Not Delete)\n- [ ] Review project roadmap | 2026-02-10 | sample-project\n- [ ] Plan sprint goals | 2026-02-15 | sample-project\n\n## Your Tasks\n`;
       fs.writeFileSync(tasksPath, tasksContent, 'utf8');
@@ -1410,7 +1548,7 @@ ${title}
 });
 
 // API endpoint to create new project
-app.post('/api/projects/create', (req, res) => {
+app.post('/api/projects/create', async (req, res) => {
   try {
     const { projectKey, projectName, goal = '', targetDate = 'ongoing' } = req.body;
 
@@ -1423,7 +1561,42 @@ app.post('/api/projects/create', (req, res) => {
       return res.status(400).json({ error: 'Project key must be lowercase with hyphens only' });
     }
 
-    const projectDir = path.join(__dirname, 'projects', projectKey);
+    // Free-tier limit: max 3 projects
+    // In desktop mode, verify plan with backend to prevent config.json tampering
+    if (process.env.IS_DESKTOP && countProjects() >= FREE_PROJECT_LIMIT) {
+      const authToken = process.env.AUTH_TOKEN;
+      let verified = false;
+      if (authToken) {
+        try {
+          const statusRes = await fetch(`${PROXY_URL}/api/auth/status`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          });
+          if (statusRes.ok) {
+            const data = await statusRes.json();
+            process.env.USER_PLAN = data.plan; // Sync latest plan
+            verified = data.plan === 'active' || data.plan === 'lifetime';
+          }
+        } catch {
+          // Network error — fall back to local check
+          verified = isPaidPlan();
+        }
+      }
+      if (!verified) {
+        return res.status(403).json({
+          error: `Free plan is limited to ${FREE_PROJECT_LIMIT} projects. Upgrade to create unlimited projects.`,
+          reason: 'project_limit',
+          limit: FREE_PROJECT_LIMIT
+        });
+      }
+    } else if (!isPaidPlan() && countProjects() >= FREE_PROJECT_LIMIT) {
+      return res.status(403).json({
+        error: `Free plan is limited to ${FREE_PROJECT_LIMIT} projects. Upgrade to create unlimited projects.`,
+        reason: 'project_limit',
+        limit: FREE_PROJECT_LIMIT
+      });
+    }
+
+    const projectDir = path.join(DATA_DIR, 'projects', projectKey);
 
     // Check if project already exists
     if (fs.existsSync(projectDir)) {
@@ -1505,7 +1678,7 @@ app.post('/api/inbox/process', (req, res) => {
     }
 
     // Find and read inbox file
-    const inboxDir = path.join(__dirname, 'inbox');
+    const inboxDir = path.join(DATA_DIR, 'inbox');
     const inboxFiles = fs.readdirSync(inboxDir).filter(f => f.endsWith('.md'));
 
     let inboxFilePath = null;
@@ -1589,11 +1762,11 @@ ${title}
 
 // Security helper function
 function isPathSafe(requestedPath) {
-  const resolved = path.resolve(__dirname, requestedPath);
+  const resolved = path.resolve(DATA_DIR, requestedPath);
   const blacklist = ['node_modules', '.git', '.env', 'server.js', 'setup.js', 'package.json', 'package-lock.json'];
-  const segments = requestedPath.split(path.sep);
+  const segments = requestedPath.split(/[/\\]/);
 
-  return (resolved === __dirname || resolved.startsWith(__dirname + path.sep)) &&
+  return (resolved === DATA_DIR || resolved.startsWith(DATA_DIR + path.sep)) &&
          !requestedPath.includes('..') &&
          !blacklist.some(blocked => segments.includes(blocked));
 }
@@ -1619,7 +1792,7 @@ function buildFileTree(dirPath, basePath = '') {
     })
     .map(entry => {
       const fullPath = path.join(dirPath, entry.name);
-      const relativePath = basePath ? path.join(basePath, entry.name) : entry.name;
+      const relativePath = basePath ? (basePath + '/' + entry.name) : entry.name;
 
       if (entry.isDirectory()) {
         return {
@@ -1661,7 +1834,7 @@ app.get('/api/files/tree', (req, res) => {
       type: 'directory',
       name: 'root',
       path: '',
-      children: buildFileTree(__dirname)
+      children: buildFileTree(DATA_DIR)
     };
     res.json({ tree });
   } catch (error) {
@@ -1683,7 +1856,7 @@ app.get('/api/files/read', (req, res) => {
       return res.status(403).json({ error: 'Invalid or unsafe file path' });
     }
 
-    const fullPath = path.join(__dirname, filePath);
+    const fullPath = path.join(DATA_DIR, filePath);
 
     if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ error: 'File not found' });
@@ -1722,15 +1895,15 @@ function archiveCompletedTasks(content) {
     }
   });
 
-  // If more than 50 completed tasks, archive the oldest ones
-  if (completedLines.length > 50) {
-    const toArchive = completedLines.slice(0, -20); // Keep last 20
-    const toKeep = completedLines.slice(-20);
+  // If completed tasks exceed threshold, archive the oldest ones
+  if (completedLines.length > ARCHIVE_THRESHOLD) {
+    const toArchive = completedLines.slice(0, -ARCHIVE_KEEP_COUNT);
+    const toKeep = completedLines.slice(-ARCHIVE_KEEP_COUNT);
 
     // Create archive file
     const now = new Date();
     const archiveFile = `tasks-archive-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.md`;
-    const archivePath = path.join(__dirname, archiveFile);
+    const archivePath = path.join(DATA_DIR, archiveFile);
 
     // Append to archive file
     const archiveHeader = `# Archived Tasks - ${now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}\n\n`;
@@ -1765,7 +1938,7 @@ function archiveCompletedTasks(content) {
 function archiveOldInboxEntries(content) {
   const lines = content.split('\n');
   const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - INBOX_ARCHIVE_DAYS);
 
   const dateSections = [];
   let currentSection = { date: null, lines: [], startIndex: 0 };
@@ -1812,7 +1985,7 @@ function archiveOldInboxEntries(content) {
     // Create archive file
     const now = new Date();
     const archiveFile = `inbox-archive-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.md`;
-    const archivePath = path.join(__dirname, archiveFile);
+    const archivePath = path.join(DATA_DIR, archiveFile);
 
     const archiveHeader = `# Archived Inbox - ${now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}\n\n`;
     let archiveContent = '';
@@ -1867,7 +2040,7 @@ async function processTasks(content) {
   }
 
   // Get available projects
-  const projectsDir = path.join(__dirname, 'projects');
+  const projectsDir = path.join(DATA_DIR, 'projects');
   const availableProjects = fs.existsSync(projectsDir)
     ? fs.readdirSync(projectsDir).filter(p => {
         const projectPath = path.join(projectsDir, p);
@@ -1912,7 +2085,7 @@ async function processTasks(content) {
       const dueDate = task.dueDate ? new Date(task.dueDate) : new Date();
       const year = dueDate.getFullYear();
       const month = String(dueDate.getMonth() + 1).padStart(2, '0');
-      const monthlyFilePath = path.join(__dirname, 'projects', projectName, 'tasks', `${year}-${month}.md`);
+      const monthlyFilePath = path.join(DATA_DIR, 'projects', projectName, 'tasks', `${year}-${month}.md`);
 
       // Ensure project and tasks directory exist
       const tasksDir = path.dirname(monthlyFilePath);
@@ -1987,7 +2160,7 @@ app.post('/api/files/write', async (req, res) => {
       return res.status(403).json({ error: 'Invalid or unsafe file path' });
     }
 
-    const fullPath = path.join(__dirname, filePath);
+    const fullPath = path.join(DATA_DIR, filePath);
 
     // Conflict detection
     if (fs.existsSync(fullPath) && lastModified) {
@@ -2067,7 +2240,7 @@ app.post('/api/files/write', async (req, res) => {
       // If saving a monthly task file, regenerate today's daily file
       if (filePath.match(/^projects\/[^/]+\/tasks\/\d{4}-\d{2}\.md$/)) {
         const today = new Date().toISOString().split('T')[0];
-        const todayFilePath = path.join(__dirname, 'daily', `${today}.md`);
+        const todayFilePath = path.join(DATA_DIR, 'daily', `${today}.md`);
 
         // Only regenerate if today's file exists (don't create it unexpectedly)
         if (fs.existsSync(todayFilePath)) {
@@ -2103,7 +2276,7 @@ app.post('/api/files/create', (req, res) => {
       return res.status(403).json({ error: 'Invalid or unsafe file path' });
     }
 
-    const fullPath = path.join(__dirname, filePath);
+    const fullPath = path.join(DATA_DIR, filePath);
 
     if (fs.existsSync(fullPath)) {
       return res.status(400).json({ error: 'File or directory already exists' });
@@ -2147,7 +2320,7 @@ app.post('/api/files/delete', (req, res) => {
       return res.status(403).json({ error: 'Cannot delete protected system file' });
     }
 
-    const fullPath = path.join(__dirname, filePath);
+    const fullPath = path.join(DATA_DIR, filePath);
 
     if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ error: 'File not found' });
@@ -2180,8 +2353,8 @@ app.post('/api/files/rename', (req, res) => {
       return res.status(403).json({ error: 'Invalid or unsafe file path' });
     }
 
-    const fullOldPath = path.join(__dirname, oldPath);
-    const fullNewPath = path.join(__dirname, newPath);
+    const fullOldPath = path.join(DATA_DIR, oldPath);
+    const fullNewPath = path.join(DATA_DIR, newPath);
 
     if (!fs.existsSync(fullOldPath)) {
       return res.status(404).json({ error: 'Source file not found' });
@@ -2213,7 +2386,7 @@ app.post('/api/files/mkdir', (req, res) => {
       return res.status(403).json({ error: 'Invalid or unsafe directory path' });
     }
 
-    const fullPath = path.join(__dirname, dirPath);
+    const fullPath = path.join(DATA_DIR, dirPath);
 
     if (fs.existsSync(fullPath)) {
       return res.status(400).json({ error: 'Directory already exists' });
@@ -2253,7 +2426,7 @@ app.post('/api/tasks/sync-today', (req, res) => {
 
       // Determine monthly file path
       const [year, month] = date.split('-');
-      const monthlyFile = path.join(__dirname, 'projects', projectName, 'tasks', `${year}-${month}.md`);
+      const monthlyFile = path.join(DATA_DIR, 'projects', projectName, 'tasks', `${year}-${month}.md`);
 
       if (!fs.existsSync(monthlyFile)) {
         console.log(`Monthly file not found for project ${projectName}`);
@@ -2340,6 +2513,13 @@ created: ${date}
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Task system server running at http://localhost:${PORT}`);
+// Start the server.
+// PORT=0 lets the OS pick a free port (used by Electron).
+// In standalone mode, PORT defaults to 3000.
+const server = app.listen(PORT, () => {
+  const actualPort = server.address().port;
+  console.log(`Task system server running at http://localhost:${actualPort}`);
 });
+
+// Export for Electron's main process to get the server instance and port
+module.exports = server;

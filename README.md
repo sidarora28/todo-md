@@ -2,171 +2,146 @@
 
 # ToDo.md
 
-**Your tasks, your machine, plain markdown.**
+**A task manager built entirely around markdown files.**
 
-A personal task management system that runs locally. No cloud, no database, no account. Just `.md` files you own forever.
+Every task is tied to a larger goal. Everything lives on your hard drive. No cloud, no lock-in — just `.md` files.
+
+[![Download](https://img.shields.io/badge/Download-macOS%20%7C%20Windows-2dd4a8?style=for-the-badge)](https://github.com/sidarora28/todo-md/releases/latest)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node 18+](https://img.shields.io/badge/node-18%2B-green.svg)](https://nodejs.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-<!-- TODO: Add hero screenshot/GIF here -->
-<!-- ![ToDo.md IDE](docs/images/ide-screenshot.png) -->
+[Website](https://todomd.app) · [Download](https://github.com/sidarora28/todo-md/releases/latest) · [Documentation](HOWTOUSE.md)
 
 </div>
 
 ---
 
-## What ToDo.md Does
+## Why ToDo.md?
 
-ToDo.md is a personal task management system that runs on your computer. You get a browser-based editor (looks and feels like VS Code) where you manage tasks, projects, and ideas -- all stored as plain markdown files on your hard drive.
+I've used hundreds of apps and built dozens of systems from scratch. None of them did what I wanted. So for the last 2 years, I went back to the basics — a notebook and pen.
 
-There's no sign-up, no subscription, no data leaving your machine. If you can open a text file, you can read your data. If you stop using the app, your files are still right there.
+That system works well day-to-day. But after a week, everything gets lost. There's no way to track past wins, failures, progress, or open items.
 
-Optional AI features (search, daily briefings, auto-sorting) are available if you bring your own API key, but everything works great without them.
+One thing stuck with me through all of this: **I want every task tied to a larger goal.**
 
-## Your Daily To-Do List (the main event)
+> **Theme:** Increase newsletter audience
+> **Goal:** 1000 new subs in 2 months
+> **Tasks:** fix landing page, add tracking, prepare draft 1, ...
 
-Every day, ToDo.md generates a single file that is your to-do list for the day. This is where you'll spend most of your time.
+This helps me focus on the right things and de-prioritise the rest. But notebook and pen doesn't work for long-term goal tracking.
 
-The system reads through **all your projects**, finds every task that's due today or overdue, and builds a focused daily file for you automatically. You don't curate this list — it's assembled from your entire workspace.
+So I built ToDo.md — a simple task management system managed entirely via markdown files. It looks and feels like VS Code, and everything stays on your machine.
 
-```markdown
-# Monday, February 10, 2026
+---
 
-## Overdue
-- [ ] Finish budget report (finance)
-- [ ] Reply to client email (freelance)
+## How It Works
 
-## Today
-- [ ] Send newsletter draft (newsletter)
-- [ ] Review pull request (open-source)
-- [ ] Call dentist (personal)
-```
+### Daily File — your to-do list for the day
 
-**This is your working file for the day.** Check items off here, and they sync back as completed in your project files automatically. Add a new task to a project file, and today's daily list updates to include it. Everything stays in sync — you never update things in two places.
+There is always just **one** daily file. This is where you spend most of your time.
 
-The daily file lives in `daily/` and a new one is generated each day.
+Every day, the system reads all your projects, finds every task that is due today or overdue, and builds a focused daily file for you.
 
-## How Tasks Get There
+- Check off a task here → it automatically updates the project files
+- Add a new task → it maps it to the relevant project
 
-Your daily file is auto-generated, but the tasks come from your projects. Here's how things flow in:
+![Daily file with overdue and today tasks](https://github.com/user-attachments/assets/bbf930a7-b14c-423c-9168-cbb81f55082e)
 
-### tasks.md -- Quick capture
+---
 
-This is your inbox for actionable items. Jot down tasks in a simple format:
+### Tasks File — quick capture for future tasks
 
-```
-- [ ] Write project proposal | 2026-02-15 | work-project
-- [ ] Buy groceries | 2026-02-11
-- [ ] Research hosting options
-```
+If a task isn't due today, add it here. The system uses the syntax to map it to the right project and the due date to surface it in the daily file when it's actually due.
 
-When you save, tasks automatically route to the right project folder. No project specified? AI figures out the best match (or it defaults to "others"). Once filed, the task shows up in your daily list when its due date arrives.
+Once processed (tied to a project), the task gets a strikethrough so you know it's been filed. If you don't mention a project, an LLM figures out the best match — or it goes to a fallback project like "others".
 
-Processed tasks get a strikethrough so you can see what's been filed. Older completed tasks auto-archive after 50 pile up.
+![Tasks file for recording tasks with future due dates](https://github.com/user-attachments/assets/c74dbfbb-69b3-4d9e-8490-cbfcbeb083a9)
 
-### inbox.md -- Your scratchpad
+---
 
-Not everything is a task yet. Dump thoughts, ideas, half-formed plans, links, and notes here. Don't worry about organizing it — date headers are inserted automatically, and entries older than 30 days are auto-archived so the file stays clean.
+### Inbox — your scratchpad
 
-When a thought becomes actionable, move it to `tasks.md`.
+Not everything is a task yet. Ideas, vague thoughts, half-formed plans, links — dump them here. Tasks from this file don't go back to a project. They just live here as ideas.
 
-### How they connect
+Date headers are inserted automatically and older entries auto-archive to keep things clean.
 
-**Inbox** is for raw thoughts. **tasks.md** turns them into actionable items filed under projects. **Your daily file** pulls it all together — the system reads every project and builds your to-do list for today. Check things off in the daily file, and changes flow back to the project files automatically.
+![Inbox for open-ended ideas without due dates](https://github.com/user-attachments/assets/5edeb51f-bed6-44dd-a019-268867e7b0f1)
 
-## Projects
+---
 
-Each project gets its own folder under `projects/` with:
+### Projects — the bigger picture
 
-- **PROJECT.md** -- The project overview: goals, milestones, progress, and notes
-- **tasks/YYYY-MM.md** -- Monthly task files with active and completed tasks
+Every task is tied to a project (a larger goal). Each project folder has at least two files:
 
-Tasks have metadata you'd expect: due date, priority (high/medium/low), status (todo/in-progress/blocked/done), and tags. When a task is marked done, it moves to the "Completed Tasks" section with a completion date.
+**Project meta** — goals, milestones, notes. You set this up once and rarely go back. But it provides good context to the LLM for smarter task sorting and search.
 
-You can create projects through the setup wizard, the IDE, or the API.
+![Project meta file with goals and milestones](https://github.com/user-attachments/assets/703cfa32-a47d-4497-a830-91a94f32aff0)
 
-## Dashboard
+**Project tasks** — all tasks for the project, organized by calendar month. Active tasks at the top, completed at the bottom.
 
-The IDE includes a built-in dashboard panel that gives you a bird's-eye view of everything:
+![Monthly task file under a project](https://github.com/user-attachments/assets/6c2a2738-cbbf-4af8-a21e-9c4866ee39b1)
 
-- **Project progress** -- See all your projects and their tasks at a glance
-- **Task counts** -- How many tasks are overdue, due today, and due this week
-- **Morning briefing** -- An AI-written personalized narrative about your day with highlights and a motivational quote (the tone rotates daily: encouraging, direct, reflective, energetic, calm)
-- **Motivational quotes** -- If you don't have an AI key, you still get a curated quote from a collection of 100 (Stoic philosophy, modern wisdom, and everything in between)
+---
 
-The dashboard auto-refreshes every 30 seconds.
+### Search — find anything
 
-## AI Features (Optional)
+Keyword search surfaces all relevant files across every project. With an LLM plugged in, you also get semantic search that understands what you're asking and summarises results.
 
-AI features are powered by your own API key. Three providers are supported: **OpenAI** (GPT-4o), **Anthropic** (Claude), and **OpenRouter** (any model). You pick one.
+![Search with LLM-powered and keyword-based results](https://github.com/user-attachments/assets/8a9ba09c-6fc9-479f-9235-ae4a9cef93ab)
 
-Here's what AI adds:
+---
 
-- **Smart Search** -- Ask questions in plain English: "what's overdue?", "show me high priority tasks for the newsletter project", "summarize my project backlog as a prioritized roadmap". For small workspaces (under 50 files), the full context is sent to the LLM for precise answers. For larger workspaces, keyword pre-filtering narrows things down first, then the LLM refines the results.
+### Dashboard
 
-- **Auto Project Inference** -- When you add tasks to `tasks.md` without specifying a project, AI matches them to the right project based on the task title and your existing projects.
+A bird's-eye view of everything: project progress, overdue/due today counts, and an AI-generated daily brief to keep you on track.
 
-- **Daily Briefings** -- Instead of just a list of tasks, you get a personalized morning summary with context about your workload, specific task and project mentions, and actionable highlights.
+---
 
-**Everything works without AI.** You get keyword search with relevance scoring, static daily summaries with motivational quotes, and manual project assignment. No features are locked behind an API key.
+## LLM — optional, not required
 
-## Getting Started
+Everything works end to end without an LLM. You get keyword search, static daily summaries, and manual project assignment.
 
-### What you need
+If you plug in an LLM, you get: smart search (ask questions in plain English), auto project inference (tasks get filed to the right project), and personalized daily briefings.
 
-- **Node.js 18+** — [Download from nodejs.org](https://nodejs.org) (click the big green button, run the installer)
-- **Git** — [Download from git-scm.com](https://git-scm.com) (optional — see "Download ZIP" below)
+**Your files always stay on your machine.** If you use an LLM, file contents are sent to the LLM provider for search queries only.
 
-Already have both? Skip to [Quick Start](#quick-start).
+---
 
-<details>
-<summary><strong>New to the terminal?</strong> Click here for a quick primer.</summary>
+## Download
 
-A terminal is a text-based app where you type commands. You'll only need it for the initial setup — after that, everything happens in your browser.
+| Platform | Download |
+|----------|----------|
+| **macOS** (Intel & Apple Silicon) | [Download .dmg](https://github.com/sidarora28/todo-md/releases/latest) |
+| **Windows** (10+) | [Download .exe](https://github.com/sidarora28/todo-md/releases/latest) |
 
-**How to open it:**
-- **Mac** — Press `Cmd + Space`, type "Terminal", hit Enter
-- **Windows** — Press the Windows key, type "Command Prompt" or "PowerShell", hit Enter
-- **Linux** — Press `Ctrl + Alt + T`
+**Free 14-day trial.** No credit card required. After the trial, [choose a plan](https://todomd.app/#pricing) to continue using AI features.
 
-You'll see a blinking cursor. That's where you paste the commands below.
+---
 
-**Don't want to use Git?** Click the green **"Code"** button at the top of this GitHub page, then **"Download ZIP"**. Unzip the folder, then open your terminal, type `cd ` (with a space after it), drag the unzipped folder into the terminal window, and press Enter. Then continue from step 3 below.
-
-</details>
-
-### Quick Start
+## Run From Source
 
 ```bash
 git clone https://github.com/sidarora28/todo-md.git
 cd todo-md
-npm run setup
-```
-
-The setup wizard handles everything: installing dependencies, picking an AI provider (optional), creating your first projects, and adding tasks. It takes about 5 minutes.
-
-New to ToDo.md? Read the **[complete guide](HOWTOUSE.md)** for a full walkthrough, syntax reference, and FAQ.
-
-### For experienced developers
-
-If you'd rather skip the wizard:
-
-```bash
 npm install && npm start
 ```
 
-Then open **http://localhost:3000**. AI config goes in `.env` — see [.env.example](.env.example) for options. Provider is auto-detected from key prefix (`sk-` → OpenAI, `sk-ant-` → Anthropic, `sk-or-v1-` → OpenRouter), or set `LLM_PROVIDER` explicitly.
+Open **http://localhost:3000**. To use your own AI provider, configure `.env` — see [.env.example](.env.example) for options.
 
----
+To run the Electron desktop app in dev mode:
+
+```bash
+npm run electron:dev
+```
 
 ## For Developers
 
-- **Server** -- Single Node.js file (`server.js`, Express), no build step, no framework, no database
-- **Frontend** -- Vanilla JS with ES modules, Monaco editor (the same editor engine as VS Code)
-- **Data** -- Plain `.md` files on disk. That's it.
-- **API** -- REST endpoints for file CRUD, task syncing, dashboard data, and AI search
+- **Server** -- Single Node.js file (`server.js`, Express), no build step
+- **Frontend** -- Vanilla JS, Monaco editor (same engine as VS Code)
+- **Desktop** -- Electron wrapper (`electron/`) with native menus and auto-updates
+- **Data** -- Plain `.md` files on disk
 
 Full details: [API Reference](docs/API.md) | [Contributor Guide](.claude/instructions.md)
 

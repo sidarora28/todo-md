@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToDo.md — Your to-do list is a markdown file</title>
+  <meta name="description" content="A personal task manager that runs on your machine. Plain .md files you own forever. Free 14-day trial, no credit card required.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body>
+
+  <!-- ===== Nav ===== -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">ToDo<span>.md</span></a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="/download" class="nav-cta">Download &rarr;</a></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero">
+    <div class="container">
+      <h1>Your to-do list is a <span class="highlight">markdown file.</span></h1>
+      <p class="hero-subtitle">A personal task manager that runs on your machine. Plain <code>.md</code> files you own forever. Free 14-day trial.</p>
+      <div class="hero-actions">
+        <a href="/download" class="btn btn-primary">Download Free &rarr;</a>
+        <a href="/signup" class="btn btn-outline">Start Free Trial</a>
+      </div>
+      <div class="hero-trust">
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Your data stays local
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Plain markdown files
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          14-day free trial
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== How It Works ===== -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="fade-in">
+        <p class="section-label">How It Works</p>
+        <h2 class="section-title">Three steps. That's it.</h2>
+        <p class="section-subtitle">No setup wizardry. No learning curve. Just markdown.</p>
+      </div>
+
+      <div class="how-tabs fade-in" style="margin-top: 3rem;">
+        <button class="how-tab active" data-tab="0">
+          <span class="how-tab-number">01</span> Capture
+        </button>
+        <button class="how-tab" data-tab="1">
+          <span class="how-tab-number">02</span> Organize
+        </button>
+        <button class="how-tab" data-tab="2">
+          <span class="how-tab-number">03</span> Get It Done
+        </button>
+      </div>
+
+      <!-- Tab 1: Capture -->
+      <div class="how-panel active fade-in" data-panel="0">
+        <div class="how-text">
+          <h3>Jot it down. Move on.</h3>
+          <p>Add tasks to <code>tasks.md</code> or your daily file. No menus, no dropdowns — just type. Dates and projects are optional metadata, not mandatory form fields.</p>
+          <ul class="how-checklist">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Quick-capture in tasks.md with optional due dates
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Scratchpad in inbox.md for ideas and notes
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Add directly to today's daily file
+            </li>
+          </ul>
+        </div>
+        <div class="how-code">
+<pre><span style="color:#569cd6;font-weight:700"># tasks.md</span>
+
+<span style="color:#dcdcaa">- [ ]</span> <span style="color:#dcdcaa">Write project proposal</span> <span style="color:#ce9178">|</span> <span style="color:#d4d4d4">2026-02-20</span> <span style="color:#ce9178">|</span> <span style="color:#4ec9b0">work</span>
+<span style="color:#dcdcaa">- [ ]</span> <span style="color:#dcdcaa">Buy groceries</span> <span style="color:#ce9178">|</span> <span style="color:#d4d4d4">2026-02-18</span>
+<span style="color:#dcdcaa">- [ ]</span> <span style="color:#dcdcaa">Research hosting options</span></pre>
+        </div>
+      </div>
+
+      <!-- Tab 2: Organize -->
+      <div class="how-panel fade-in" data-panel="1">
+        <div class="how-text">
+          <h3>It organizes itself.</h3>
+          <p>Tasks auto-route to the right project folder. Every morning, a daily file is generated with everything that's due — pulled from all your projects automatically.</p>
+          <ul class="how-checklist">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              AI matches tasks to projects (or you can specify)
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Daily file assembles itself each morning
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Projects have goals, milestones, and monthly task files
+            </li>
+          </ul>
+        </div>
+        <div class="how-code">
+<pre><span style="color:#569cd6;font-weight:700"># Monday, February 16, 2026</span>
+
+<span style="color:#569cd6;font-weight:700">## Overdue</span>
+<span style="color:#dcdcaa">- [ ]</span> <span style="color:#dcdcaa">Finish budget report</span> <span style="color:#ce9178">(</span><span style="color:#4ec9b0">finance</span><span style="color:#ce9178">)</span>
+
+<span style="color:#569cd6;font-weight:700">## Today</span>
+<span style="color:#dcdcaa">- [ ]</span> <span style="color:#dcdcaa">Write project proposal</span> <span style="color:#ce9178">(</span><span style="color:#4ec9b0">work</span><span style="color:#ce9178">)</span>
+<span style="color:#dcdcaa">- [ ]</span> <span style="color:#dcdcaa">Buy groceries</span> <span style="color:#ce9178">(</span><span style="color:#4ec9b0">personal</span><span style="color:#ce9178">)</span></pre>
+        </div>
+      </div>
+
+      <!-- Tab 3: Get It Done -->
+      <div class="how-panel fade-in" data-panel="2">
+        <div class="how-text">
+          <h3>Check it off. Everything syncs.</h3>
+          <p>Work from your daily file. Check off a task and it's marked done in the project file automatically. No updating in two places. No drift.</p>
+          <ul class="how-checklist">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Check off tasks in the daily file — syncs everywhere
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Dashboard shows progress across all projects
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              AI daily briefings summarize your workload
+            </li>
+          </ul>
+        </div>
+        <div class="how-code">
+<pre><span style="color:#569cd6;font-weight:700"># Monday, February 16, 2026</span>
+
+<span style="color:#569cd6;font-weight:700">## Today</span>
+<span style="color:#858585">- [x]</span> <span style="color:#858585;text-decoration:line-through">~~Write project proposal~~</span> <span style="color:#858585">| 2026-02-16 | work</span> <span style="color:#858585">(added to work)</span>
+<span style="color:#858585">- [x]</span> <span style="color:#858585;text-decoration:line-through">~~Buy groceries~~</span> <span style="color:#858585">| 2026-02-16</span>
+<span style="color:#dcdcaa">- [ ]</span> <span style="color:#dcdcaa">Review pull request</span> <span style="color:#ce9178">(</span><span style="color:#4ec9b0">open-source</span><span style="color:#ce9178">)</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Features ===== -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="fade-in" style="text-align: center;">
+        <p class="section-label">Features</p>
+        <h2 class="section-title">Built for how you actually work.</h2>
+        <p class="section-subtitle" style="margin: 0 auto;">No bloat. No learning curve. Just the features you need.</p>
+      </div>
+
+      <div class="features-grid fade-in">
+        <!-- Plain Markdown -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <h3>Plain Markdown</h3>
+          <p>Your data is <code>.md</code> files. Open them in any editor, sync with any service, own them forever.</p>
+        </div>
+
+        <!-- Daily Auto-List -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <h3>Daily Auto-List</h3>
+          <p>Every morning, a focused to-do list is generated from all your projects. No curation needed.</p>
+        </div>
+
+        <!-- Project Tracking -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3>Project Tracking</h3>
+          <p>Each project has goals, milestones, and monthly task files. Strategic and tactical views, always in sync.</p>
+        </div>
+
+        <!-- Optional AI -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/><circle cx="12" cy="15" r="1"/></svg>
+          </div>
+          <h3>Optional AI</h3>
+          <p>Smart search, auto project inference, personalized daily briefings. Bring your own API key — or skip it entirely.</p>
+        </div>
+
+        <!-- Built-in IDE -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <h3>Built-in IDE</h3>
+          <p>VS Code-style editor in your browser. File tree, Monaco editor, dashboard — all in one window.</p>
+        </div>
+
+        <!-- 100% Local -->
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>100% Local</h3>
+          <p>No servers, no databases, no sign-up. Runs on your machine. Your files stay on your hard drive.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== App Preview ===== -->
+  <section class="preview" id="preview">
+    <div class="container">
+      <div class="fade-in" style="text-align: center;">
+        <p class="section-label">See It In Action</p>
+        <h2 class="section-title">Your workspace, in the browser.</h2>
+        <p class="section-subtitle">A VS Code-style editor with file tree, task sync, and dashboard — all running locally.</p>
+      </div>
+
+      <div class="preview-frame fade-in">
+        <div class="preview-titlebar">
+          <span class="preview-dot red"></span>
+          <span class="preview-dot yellow"></span>
+          <span class="preview-dot green"></span>
+        </div>
+        <div class="preview-content">
+          <!-- Sidebar -->
+          <div class="preview-sidebar">
+            <div class="preview-sidebar-header">Explorer</div>
+            <div class="preview-file"><span class="preview-file-icon">&#9733;</span> tasks.md</div>
+            <div class="preview-file"><span class="preview-file-icon">&#9733;</span> inbox.md</div>
+            <div class="preview-file folder"><span class="preview-folder-icon">&#9660;</span> daily</div>
+            <div class="preview-file active" style="padding-left: 2rem;"><span class="preview-file-icon">&#9733;</span> 2026-02-17.md</div>
+            <div class="preview-file folder"><span class="preview-folder-icon">&#9656;</span> projects</div>
+            <div class="preview-file" style="padding-left: 2rem;"><span class="preview-folder-icon">&#9656;</span> work</div>
+            <div class="preview-file" style="padding-left: 2rem;"><span class="preview-folder-icon">&#9656;</span> personal</div>
+            <div class="preview-file" style="padding-left: 2rem;"><span class="preview-folder-icon">&#9656;</span> open-source</div>
+            <div class="preview-file"><span class="preview-file-icon">&#9733;</span> HOWTOUSE.md</div>
+          </div>
+
+          <!-- Editor -->
+          <div class="preview-editor">
+            <div><span class="line-number">1</span> <span style="color:#569cd6;font-weight:700"># Tuesday, February 17, 2026</span></div>
+            <div><span class="line-number">2</span></div>
+            <div><span class="line-number">3</span> <span style="color:#569cd6;font-weight:700">## Overdue</span></div>
+            <div><span class="line-number">4</span> <span style="color:#dcdcaa">- [ ]</span> <span style="color:#dcdcaa">Finish budget report</span> <span style="color:#ce9178">(</span><span style="color:#4ec9b0">finance</span><span style="color:#ce9178">)</span></div>
+            <div><span class="line-number">5</span></div>
+            <div><span class="line-number">6</span> <span style="color:#569cd6;font-weight:700">## Today</span></div>
+            <div><span class="line-number">7</span> <span style="color:#858585">- [x]</span> <span style="color:#858585;text-decoration:line-through">~~Send newsletter draft~~</span> <span style="color:#858585">| 2026-02-17 | work</span> <span style="color:#858585">(added to work)</span></div>
+            <div><span class="line-number">8</span> <span style="color:#dcdcaa">- [ ]</span> <span style="color:#dcdcaa">Review pull request</span> <span style="color:#ce9178">(</span><span style="color:#4ec9b0">open-source</span><span style="color:#ce9178">)</span></div>
+            <div><span class="line-number">9</span> <span style="color:#dcdcaa">- [ ]</span> <span style="color:#dcdcaa">Call dentist</span> <span style="color:#ce9178">(</span><span style="color:#4ec9b0">personal</span><span style="color:#ce9178">)</span></div>
+            <div><span class="line-number">10</span></div>
+            <div><span class="line-number">11</span> <span style="color:#569cd6;font-weight:700">## This Week</span></div>
+            <div><span class="line-number">12</span> <span style="color:#dcdcaa">- [ ]</span> <span style="color:#dcdcaa">Sketch onboarding screens</span> <span style="color:#ce9178">(</span><span style="color:#4ec9b0">app-redesign</span><span style="color:#ce9178">)</span></div>
+          </div>
+
+          <!-- Dashboard -->
+          <div class="preview-dashboard">
+            <div class="preview-dash-header">Today's Focus</div>
+
+            <div class="preview-stat" style="margin-bottom:0.75rem;">
+              <div style="font-size:0.7rem;color:#569cd6;font-weight:700;margin-bottom:0.4rem;">Daily Briefing</div>
+              <div style="font-size:0.7rem;color:#858585;line-height:1.5;">You have 1 overdue task and 3 tasks due today. Focus on clearing the overdue item first.</div>
+            </div>
+
+            <div style="margin-bottom:0.75rem;">
+              <div style="font-size:0.65rem;color:#858585;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;">Overview</div>
+              <div style="display:flex;gap:0.4rem;">
+                <div class="preview-stat" style="flex:1;text-align:center;padding:0.5rem;">
+                  <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:#4ec9b0;">2</div>
+                  <div style="font-size:0.55rem;color:#858585;">This Week</div>
+                </div>
+                <div class="preview-stat" style="flex:1;text-align:center;padding:0.5rem;">
+                  <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:#569cd6;">3</div>
+                  <div style="font-size:0.55rem;color:#858585;">Due Today</div>
+                </div>
+                <div class="preview-stat" style="flex:1;text-align:center;padding:0.5rem;">
+                  <div style="font-family:var(--font-mono);font-size:1rem;font-weight:700;color:#ce9178;">1</div>
+                  <div style="font-size:0.55rem;color:#858585;">Overdue</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-bottom:0.5rem;">
+              <div style="font-size:0.65rem;color:#ce9178;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem;">Overdue</div>
+              <div style="font-size:0.7rem;color:#cccccc;padding:0.3rem 0;">Finish budget report <span style="color:#858585;font-size:0.6rem;">(finance)</span></div>
+            </div>
+
+            <div>
+              <div style="font-size:0.65rem;color:#569cd6;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem;">Today</div>
+              <div style="font-size:0.7rem;color:#cccccc;padding:0.2rem 0;">Write project proposal <span style="color:#858585;font-size:0.6rem;">(work)</span></div>
+              <div style="font-size:0.7rem;color:#cccccc;padding:0.2rem 0;">Review pull request <span style="color:#858585;font-size:0.6rem;">(open-source)</span></div>
+              <div style="font-size:0.7rem;color:#cccccc;padding:0.2rem 0;">Call dentist <span style="color:#858585;font-size:0.6rem;">(personal)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="preview-caption fade-in">The same editor engine as VS Code. Runs on localhost — nothing leaves your machine.</p>
+    </div>
+  </section>
+
+  <!-- ===== Pricing ===== -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="fade-in">
+        <p class="section-label">Pricing</p>
+        <h2 class="section-title">Simple, transparent pricing.</h2>
+        <p class="section-subtitle" style="margin: 0 auto;">All plans include the full app and every feature. No gates, no tiers.</p>
+      </div>
+
+      <div class="pricing-cards fade-in" style="margin-top: 3rem;">
+        <!-- Monthly -->
+        <div class="pricing-card">
+          <p class="pricing-plan">Monthly</p>
+          <p class="pricing-amount"><span class="currency">$</span>6<sup style="font-size:1.25rem;font-weight:700;">.99</sup></p>
+          <p class="pricing-period">per month</p>
+          <p class="pricing-compare">Billed monthly</p>
+          <ul class="pricing-features">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Full app + all features</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Unlimited projects</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Cancel anytime</li>
+          </ul>
+          <button class="btn btn-outline btn-full" data-plan="monthly">Start Monthly</button>
+        </div>
+
+        <!-- Annual (featured) -->
+        <div class="pricing-card featured">
+          <span class="pricing-badge popular">Most Popular</span>
+          <p class="pricing-plan">Annual</p>
+          <p class="pricing-amount"><span class="currency">$</span>5</p>
+          <p class="pricing-period">per month, billed yearly</p>
+          <p class="pricing-compare"><s>$83.88/yr</s> &rarr; $60/yr</p>
+          <span class="pricing-save">Save 29%</span>
+          <ul class="pricing-features">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Full app + all features</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Unlimited projects</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Cancel anytime</li>
+          </ul>
+          <button class="btn btn-primary btn-full" data-plan="annual">Get Annual &rarr;</button>
+        </div>
+
+        <!-- Lifetime -->
+        <div class="pricing-card">
+          <span class="pricing-badge value">Best Value</span>
+          <p class="pricing-plan">Lifetime</p>
+          <p class="pricing-amount"><span class="currency">$</span>150</p>
+          <p class="pricing-period">one-time payment</p>
+          <p class="pricing-compare">Pay once, yours forever</p>
+          <ul class="pricing-features">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Full app + all features</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Unlimited projects</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> All future updates included</li>
+          </ul>
+          <button class="btn btn-outline btn-full" data-plan="lifetime">Go Lifetime</button>
+        </div>
+      </div>
+
+      <p class="pricing-note fade-in">All plans include the full app + all features. No feature gates.</p>
+    </div>
+  </section>
+
+  <!-- ===== Bottom CTA ===== -->
+  <section class="bottom-cta">
+    <div class="container fade-in">
+      <h2>Start organizing in markdown.</h2>
+      <p>Download ToDo.md and take control of your tasks.</p>
+      <div class="hero-actions">
+        <a href="/download" class="btn btn-primary">Download Free &rarr;</a>
+        <a href="https://github.com/sidarora28/todo-md" target="_blank" rel="noopener" class="btn btn-outline">View on GitHub</a>
+      </div>
+      <div class="trust-badges">
+        <span class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Your data stays local
+        </span>
+        <span class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Plain markdown files
+        </span>
+        <span class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          14-day free trial
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <ul class="footer-links">
+        <li><a href="https://github.com/sidarora28/todo-md" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://github.com/sidarora28/todo-md/blob/main/HOWTOUSE.md" target="_blank" rel="noopener">Documentation</a></li>
+        <li><a href="https://github.com/sidarora28/todo-md/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></li>
+        <li><a href="/privacy">Privacy</a></li>
+        <li><a href="/terms">Terms</a></li>
+      </ul>
+      <p class="footer-copy">&copy; 2026 ToDo.md</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

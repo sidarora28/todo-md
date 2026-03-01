@@ -9,16 +9,24 @@ class EditorComponent {
   async init() {
     await setupMonaco(); // From monaco-setup.js
 
+    // Fetch editor settings from config (font size, word wrap, font family)
+    let settings = { fontSize: 14, wordWrap: 'on', fontFamily: 'JetBrains Mono, Menlo, Monaco, monospace' };
+    try {
+      const res = await fetch('/api/settings/editor');
+      if (res.ok) settings = await res.json();
+    } catch (e) { /* use defaults */ }
+
     const currentTheme = localStorage.getItem('theme') || 'dark';
 
     this.editor = monaco.editor.create(this.containerEl, {
       value: '',
-      language: 'markdown',
-      theme: currentTheme === 'dark' ? 'vs-dark' : 'vs',
-      fontSize: 14,
+      language: 'todomd',
+      theme: currentTheme === 'dark' ? 'todomd-dark' : 'todomd-light',
+      fontSize: settings.fontSize,
+      fontFamily: settings.fontFamily,
       lineNumbers: 'on',
       minimap: { enabled: false },
-      wordWrap: 'on',
+      wordWrap: settings.wordWrap,
       automaticLayout: true
     });
 
@@ -34,8 +42,19 @@ class EditorComponent {
   }
 
   async loadFile(filePath) {
+    if (!this.editor) {
+      console.warn('Editor not initialized, cannot load file:', filePath);
+      return;
+    }
+
     const response = await fetch(`/api/files/read?path=${encodeURIComponent(filePath)}`);
+    if (!response.ok) {
+      console.error('Failed to load file:', filePath, response.status);
+      return;
+    }
+
     const data = await response.json();
+    if (!data.content && data.content !== '') return;
 
     this.currentFile = filePath;
     this.editor.setValue(data.content);
@@ -44,7 +63,8 @@ class EditorComponent {
 
     // Start auto-saver
     if (this.autoSaver) this.autoSaver.stop();
-    this.autoSaver = new AutoSaver(this.editor, filePath, data.stats.modified);
+    const lastModified = data.stats && data.stats.modified ? data.stats.modified : null;
+    this.autoSaver = new AutoSaver(this.editor, filePath, lastModified);
     this.autoSaver.start();
   }
 
@@ -56,7 +76,7 @@ class EditorComponent {
   }
 
   setupYAMLAutocomplete() {
-    monaco.languages.registerCompletionItemProvider('markdown', {
+    monaco.languages.registerCompletionItemProvider('todomd', {
       provideCompletionItems: (model, position) => {
         const lineContent = model.getLineContent(position.lineNumber);
         const suggestions = [];

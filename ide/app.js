@@ -1,5 +1,9 @@
 // Initialize IDE
 (async function() {
+  // Status banner (trial countdown / upgrade prompt) — loads async, non-blocking
+  const statusBanner = new StatusBanner(document.getElementById('status-banner'));
+  statusBanner.load();
+
   // Create components
   const fileTree = new FileTree(
     document.getElementById('file-tree'),
@@ -31,20 +35,27 @@
   const resizerLeft = new Resizer(
     document.getElementById('resizer-left'),
     leftPanel,
-    document.querySelector('.editor-panel')
+    document.querySelector('.editor-panel'),
+    'left'
   );
   const resizerRight = new Resizer(
     document.getElementById('resizer-right'),
     rightPanel,
-    document.querySelector('.editor-panel')
+    document.querySelector('.editor-panel'),
+    'right'
   );
 
-  // Initialize Monaco Editor
-  await editor.init();
+  // Initialize editor and load data in parallel so one failure doesn't block the other
+  const [editorResult] = await Promise.allSettled([
+    editor.init(),
+    fileTree.load(),
+    dashboardWidget.load()
+  ]);
 
-  // Load initial data
-  await fileTree.load();
-  await dashboardWidget.load();
+  if (editorResult.status === 'rejected') {
+    console.error('Editor failed to initialize:', editorResult.reason);
+  }
+
   dashboardWidget.loadDailySummary();
 
   // Wire search button

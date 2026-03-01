@@ -1,0 +1,170 @@
+const { getUser, unauthorized } = require('../../lib/auth');
+const { supabase } = require('../../lib/supabase');
+const { setCors } = require('../../lib/cors');
+const { log } = require('../../lib/logger');
+const { checkEnv } = require('../../lib/env');
+const { PLAN_LIMITS, MAX_TOKENS_DEFAULT, MAX_TOKENS_HARD_CAP } = require('../../lib/constants');
+
+// LLM provider configs — uses env vars set on Vercel
+function getLLMConfig() {
+  const apiKey = process.env.LLM_API_KEY;
+  const provider = process.env.LLM_PROVIDER || 'openai';
+  const model = process.env.LLM_MODEL;
+
+  const configs = {
+    openai: {
+      provider: 'openai',
+      apiKey,
+      model: model || 'gpt-4o-mini',
+      endpoint: 'https://api.openai.com/v1/chat/completions'
+    },
+    anthropic: {
+      provider: 'anthropic',
+      apiKey,
+      model: model || 'claude-sonnet-4-5-20250929',
+      endpoint: 'https://api.anthropic.com/v1/messages'
+    },
+    openrouter: {
+      provider: 'openrouter',
+      apiKey,
+      model: model || 'anthropic/claude-sonnet-4-5',
+      endpoint: 'https://openrouter.ai/api/v1/chat/completions'
+    }
+  };
+
+  return configs[provider] || configs.openai;
+}
+
+module.exports = async function handler(req, res) {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const { ok, missing } = checkEnv('llm');
+  if (!ok) return res.status(500).json({ error: `Server misconfigured: missing ${missing.join(', ')}` });
+
+  // 1. Authenticate
+  const user = await getUser(req);
+  if (!user) return unauthorized(res);
+
+  // 2. Check subscription status
+  const { data: profile, error: profileErr } = await supabase
+    .from('profiles')
+    .select('plan, trial_ends_at')
+    .eq('id', user.id)
+    .single();
+
+  if (profileErr || !profile) {
+    return res.status(403).json({ error: 'Profile not found' });
+  }
+
+  // Check if trial has expired
+  if (profile.plan === 'trial' && new Date(profile.trial_ends_at) < new Date()) {
+    return res.status(403).json({
+      error: 'trial_expired',
+      message: 'Your free trial has ended. Please subscribe to continue using AI features.'
+    });
+  }
+
+  if (profile.plan === 'expired') {
+    return res.status(403).json({
+      error: 'subscription_expired',
+      message: 'Your subscription has expired. Please renew to continue using AI features.'
+    });
+  }
+
+  // 3. Check rate limit — atomic: ensure row exists, then check count
+  const today = new Date().toISOString().split('T')[0];
+  const limit = PLAN_LIMITS[profile.plan] || 0;
+
+  // Ensure usage row exists for today
+  await supabase
+    .from('usage')
+    .upsert(
+      { user_id: user.id, date: today, request_count: 0 },
+      { onConflict: 'user_id,date', ignoreDuplicates: true }
+    );
+
+  // Fetch current count
+  const { data: currentUsage } = await supabase
+    .from('usage')
+    .select('request_count')
+    .eq('user_id', user.id)
+    .eq('date', today)
+    .single();
+
+  if (currentUsage && currentUsage.request_count >= limit) {
+    return res.status(429).json({
+      error: 'rate_limited',
+      message: `Daily limit reached (${limit} requests). Resets at midnight UTC.`
+    });
+  }
+
+  // Increment count before calling LLM (pre-increment prevents overuse on concurrent requests)
+  await supabase
+    .from('usage')
+    .update({ request_count: (currentUsage?.request_count || 0) + 1 })
+    .eq('user_id', user.id)
+    .eq('date', today);
+
+  // 4. Call LLM
+  const { prompt, options = {} } = req.body;
+  if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+
+  const config = getLLMConfig();
+  const model = options.model || config.model;
+  const maxTokens = Math.min(options.maxTokens || MAX_TOKENS_DEFAULT, MAX_TOKENS_HARD_CAP);
+
+  try {
+    let response;
+
+    if (config.provider === 'anthropic') {
+      response = await fetch(config.endpoint, {
+        method: 'POST',
+        headers: {
+          'x-api-key': config.apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+    } else {
+      response = await fetch(config.endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+    }
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      log.error(`${config.provider} API error: ${response.status}`, errorBody);
+      return res.status(502).json({ error: 'llm_error', message: 'AI provider returned an error' });
+    }
+
+    const data = await response.json();
+    let content;
+    if (config.provider === 'anthropic') {
+      content = data.content?.[0]?.text;
+    } else {
+      content = data.choices?.[0]?.message?.content;
+    }
+
+    return res.status(200).json({ content });
+
+  } catch (err) {
+    log.error('Proxy LLM error:', err.message);
+    return res.status(500).json({ error: 'network_error', message: 'Failed to reach AI provider' });
+  }
+};

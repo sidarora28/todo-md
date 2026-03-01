@@ -26,7 +26,11 @@ class ContextMenu {
       const el = document.createElement('div');
       el.className = 'context-menu-item';
       if (menuItem.danger) el.classList.add('danger');
-      el.innerHTML = `<span class="icon">${menuItem.icon}</span> ${menuItem.label}`;
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'icon';
+      iconSpan.textContent = menuItem.icon;
+      el.appendChild(iconSpan);
+      el.appendChild(document.createTextNode(' ' + menuItem.label));
       el.onclick = (e) => {
         e.stopPropagation();
         menuItem.action();

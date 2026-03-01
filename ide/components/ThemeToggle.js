@@ -15,7 +15,7 @@ class ThemeToggle {
 
     // Update Monaco theme
     if (window.monacoEditor) {
-      monaco.editor.setTheme(this.currentTheme === 'dark' ? 'vs-dark' : 'vs');
+      monaco.editor.setTheme(this.currentTheme === 'dark' ? 'todomd-dark' : 'todomd-light');
     }
   }
 

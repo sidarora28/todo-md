@@ -1,8 +1,9 @@
 class Resizer {
-  constructor(resizerEl, leftPanel, rightPanel) {
+  constructor(resizerEl, panel, adjacentPanel, side = 'left') {
     this.resizerEl = resizerEl;
-    this.leftPanel = leftPanel;
-    this.rightPanel = rightPanel;
+    this.panel = panel;
+    this.adjacentPanel = adjacentPanel;
+    this.side = side;
     this.isResizing = false;
 
     this.resizerEl.addEventListener('mousedown', (e) => this.onMouseDown(e));
@@ -20,15 +21,17 @@ class Resizer {
   onMouseMove(e) {
     if (!this.isResizing) return;
 
-    const containerRect = this.leftPanel.parentElement.getBoundingClientRect();
-    const newWidth = e.clientX - containerRect.left;
+    const containerRect = this.panel.parentElement.getBoundingClientRect();
+    const newWidth = this.side === 'left'
+      ? e.clientX - containerRect.left
+      : containerRect.right - e.clientX;
 
     // Apply min/max constraints from CSS
-    const minWidth = parseInt(getComputedStyle(this.leftPanel).minWidth) || 200;
-    const maxWidth = parseInt(getComputedStyle(this.leftPanel).maxWidth) || 500;
+    const minWidth = parseInt(getComputedStyle(this.panel).minWidth) || 200;
+    const maxWidth = parseInt(getComputedStyle(this.panel).maxWidth) || 500;
 
     if (newWidth >= minWidth && newWidth <= maxWidth) {
-      this.leftPanel.style.width = `${newWidth}px`;
+      this.panel.style.width = `${newWidth}px`;
     }
   }
 
